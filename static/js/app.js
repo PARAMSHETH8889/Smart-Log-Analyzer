@@ -820,6 +820,32 @@ window.LogApp = (function () {
             });
         }
 
+        const feedAiBtn = document.getElementById('btnFeedAiSupabase');
+        if (feedAiBtn) {
+            feedAiBtn.addEventListener('click', async () => {
+                feedAiBtn.disabled = true;
+                const originalHtml = feedAiBtn.innerHTML;
+                feedAiBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Feeding AI...';
+                try {
+                    const res = await fetch('/api/dataset/feed-ai-supabase', { method: 'POST' });
+                    const resText = await res.text();
+                    let data;
+                    try { data = JSON.parse(resText); } catch(e) { data = { success: false, message: resText.replace(/<[^>]+>/g, '').trim() }; }
+                    if (data.success) {
+                        showToast(data.message || 'AI analyses successfully fed to Supabase ai_analysis table!', 'success');
+                        fetchLogs();
+                    } else {
+                        showToast(data.message || 'Failed to feed AI analyses to Supabase.', 'danger');
+                    }
+                } catch (err) {
+                    showToast('Network error while feeding AI analyses to Supabase.', 'danger');
+                } finally {
+                    feedAiBtn.disabled = false;
+                    feedAiBtn.innerHTML = originalHtml;
+                }
+            });
+        }
+
         let selectedLogIds = new Set();
 
         function updateSelectionUI() {

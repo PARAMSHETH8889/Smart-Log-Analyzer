@@ -308,7 +308,7 @@ class SupabaseService:
         if logs_err:
             return {"success": False, "error": f"Failed syncing logs: {logs_err}"}
 
-        # 2. Sync anomalies
+        # 2. Sync anomalies and AI analyses
         anom_records = []
         ai_records = []
         for l in all_logs:
@@ -316,10 +316,9 @@ class SupabaseService:
                 anom_dict = l.to_supabase_anomaly()
                 if anom_dict:
                     anom_records.append(anom_dict)
-                    if l.ai_explanation or l.ai_root_cause:
-                        ai_dict = l.to_supabase_ai(anomaly_uuid=anom_dict["id"])
-                        if ai_dict:
-                            ai_records.append(ai_dict)
+                    ai_dict = l.to_supabase_ai(anomaly_uuid=anom_dict["id"])
+                    if ai_dict:
+                        ai_records.append(ai_dict)
 
         anom_count, anom_err = cls.insert_anomalies(anom_records)
         ai_count, ai_err = cls.insert_ai_analyses(ai_records)

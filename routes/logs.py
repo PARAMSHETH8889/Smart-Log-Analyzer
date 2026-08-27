@@ -295,10 +295,22 @@ def analyze_log_ai(log_id: int):
             "message": error_msg or "Failed to generate AI analysis.",
         }), 502
 
+    # Immediately synchronize generated AI analysis to Supabase ai_analysis table
+    if SupabaseService.is_configured():
+        try:
+            anom_dict = log.to_supabase_anomaly()
+            if anom_dict:
+                SupabaseService.insert_anomalies([anom_dict])
+                ai_dict = log.to_supabase_ai(anomaly_uuid=anom_dict["id"])
+                if ai_dict:
+                    SupabaseService.insert_ai_analyses([ai_dict])
+        except Exception as ex:
+            print(f"[Supabase AI Sync Notice] {ex}")
+
     return jsonify({
         "success": True,
         "data": result,
-        "message": "Gemini AI explanation generated successfully.",
+        "message": "Gemini AI explanation generated and synced to Supabase successfully.",
     })
 
 
@@ -565,3 +577,50 @@ def capture_live_logs_api():
     result = LiveLogService.capture_and_ingest_live_logs(count=count, channel=channel)
     status_code = 200 if result.get("success") else 500
     return jsonify(result), status_code
+
+
+@logs_bp.route("/api/dataset/feed-ai-supabase", methods=["POST"])
+def feed_ai_supabase_endpoint():
+    """
+    Feed and synchronize AI analysis records for all anomalies to the Supabase `ai_analysis` table.
+    """
+    if not SupabaseService.is_configured():
+        return jsonify({
+            "success": False,
+            "message": "Supabase credentials are not configured.",
+        }), 400
+
+    anomalies = Log.query.filter_by(anomaly=True).all()
+    if not anomalies:
+        return jsonify({
+            "success": True,
+            "message": "No anomalies found in local database to feed into ai_analysis table.",
+            "ai_synced": 0,
+        })
+
+    anom_records = []
+    ai_records = []
+    for a in anomalies:
+        anom_dict = a.to_supabase_anomaly()
+        if anom_dict:
+            anom_records.append(anom_dict)
+            ai_dict = a.to_supabase_ai(anomaly_uuid=anom_dict["id"])
+            if ai_dict:
+                ai_records.append(ai_dict)
+
+    # 1. Ensure anomalies exist in Supabase
+    anom_count, anom_err = SupabaseService.insert_anomalies(anom_records)
+    if anom_err:
+        return jsonify({"success": False, "message": f"Failed inserting anomalies: {anom_err}"}), 500
+
+    # 2. Insert AI analyses
+    ai_count, ai_err = SupabaseService.insert_ai_analyses(ai_records)
+    if ai_err:
+        return jsonify({"success": False, "message": f"Failed inserting ai_analysis: {ai_err}"}), 500
+
+    return jsonify({
+        "success": True,
+        "message": f"Successfully fed {ai_count} AI analysis records into Supabase 'ai_analysis' table!",
+        "ai_synced": ai_count,
+        "anomalies_synced": anom_count,
+    })

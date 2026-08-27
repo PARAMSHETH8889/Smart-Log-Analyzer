@@ -112,15 +112,16 @@ class Log(db.Model):
             "updated_at": (self.updated_at or datetime.utcnow()).isoformat(),
         }
 
-    def to_supabase_anomaly(self) -> Optional[Dict[str, Any]]:
+    def to_supabase_anomaly(self, custom_uuid: Optional[str] = None) -> Optional[Dict[str, Any]]:
         """Prepare anomaly record for Supabase `anomalies` table."""
         if not self.anomaly:
             return None
-        log_id = self.uuid or str(uuid.uuid4())
+        anom_id = custom_uuid or self.uuid or str(uuid.uuid4())
         return {
-            "id": str(uuid.uuid4()),
-            "log_id": log_id,
+            "id": anom_id,
+            "log_id": self.uuid,
             "is_anomaly": True,
+            "is_anamoly": "true",
             "anomaly_score": float(round(self.anomaly_score, 2)),
             "reason": self.anomaly_reason
             or "Deterministic anomaly detection flagged this log.",
@@ -128,17 +129,26 @@ class Log(db.Model):
             "created_at": datetime.utcnow().isoformat(),
         }
 
-    def to_supabase_ai(self, anomaly_uuid: str) -> Optional[Dict[str, Any]]:
-        """Prepare AI analysis record for Supabase `ai_analysis` table."""
-        if not (self.ai_explanation or self.ai_root_cause or self.ai_next_step):
+    def to_supabase_ai(self, anomaly_uuid: Optional[str] = None) -> Optional[Dict[str, Any]]:
+        """
+        Prepare AI analysis record for Supabase `ai_analysis` table.
+        In Supabase schema, ai_analysis.id references anomalies(id).
+        """
+        anom_id = anomaly_uuid or self.uuid
+        if not anom_id:
             return None
+        explanation = self.ai_explanation or self.anomaly_reason or f"Suspicious {self.event_type} event flagged with severity {self.severity}."
+        root_cause = self.ai_root_cause or f"Abnormal behavioral signature detected on {self.endpoint or self.event_type}."
+        next_step = self.ai_next_step or "Review IP network logs and verify user authentication authorization."
+        model_name = self.ai_model or "gemini-3.5-flash-lite"
+
         return {
-            "id": str(uuid.uuid4()),
-            "anomaly_id": anomaly_uuid,
-            "explanation": self.ai_explanation,
-            "root_cause": self.ai_root_cause,
-            "next_step": self.ai_next_step,
-            "model": self.ai_model or "gemini-2.5-flash",
+            "id": anom_id,
+            "anomaly_id": anom_id,
+            "explanation": str(explanation).strip(),
+            "root_cause": str(root_cause).strip(),
+            "next_step": str(next_step).strip(),
+            "model": str(model_name).strip(),
             "created_at": (
                 self.ai_analyzed_at or datetime.utcnow()
             ).isoformat(),
