@@ -820,6 +820,125 @@ window.LogApp = (function () {
             });
         }
 
+        let selectedLogIds = new Set();
+
+        function updateSelectionUI() {
+            const actionBar = document.getElementById('selectionActionBar');
+            const countText = document.getElementById('selectedCountText');
+            const selectAllCheckbox = document.getElementById('selectAllLogs');
+
+            if (countText) {
+                countText.textContent = `${selectedLogIds.size} log${selectedLogIds.size === 1 ? '' : 's'} selected`;
+            }
+            if (actionBar) {
+                if (selectedLogIds.size > 0) {
+                    actionBar.classList.remove('d-none');
+                } else {
+                    actionBar.classList.add('d-none');
+                }
+            }
+            if (selectAllCheckbox) {
+                const rowCheckboxes = document.querySelectorAll('.row-select-checkbox');
+                if (rowCheckboxes.length > 0 && Array.from(rowCheckboxes).every(cb => cb.checked)) {
+                    selectAllCheckbox.checked = true;
+                    selectAllCheckbox.indeterminate = false;
+                } else if (Array.from(rowCheckboxes).some(cb => cb.checked)) {
+                    selectAllCheckbox.checked = false;
+                    selectAllCheckbox.indeterminate = true;
+                } else {
+                    selectAllCheckbox.checked = false;
+                    selectAllCheckbox.indeterminate = false;
+                }
+            }
+        }
+
+        // Select All Checkbox Handler
+        const selectAllCb = document.getElementById('selectAllLogs');
+        if (selectAllCb) {
+            selectAllCb.addEventListener('change', () => {
+                const rowCheckboxes = document.querySelectorAll('.row-select-checkbox');
+                rowCheckboxes.forEach(cb => {
+                    const logId = parseInt(cb.getAttribute('data-log-id'));
+                    cb.checked = selectAllCb.checked;
+                    if (selectAllCb.checked) {
+                        selectedLogIds.add(logId);
+                    } else {
+                        selectedLogIds.delete(logId);
+                    }
+                });
+                updateSelectionUI();
+            });
+        }
+
+        // Deselect All Action
+        const deselectBtn = document.getElementById('btnDeselectAll');
+        if (deselectBtn) {
+            deselectBtn.addEventListener('click', () => {
+                selectedLogIds.clear();
+                const rowCheckboxes = document.querySelectorAll('.row-select-checkbox');
+                rowCheckboxes.forEach(cb => cb.checked = false);
+                updateSelectionUI();
+            });
+        }
+
+        // Delete Selected (Local Only)
+        const deleteSelectedLocalBtn = document.getElementById('btnDeleteSelectedLocal');
+        if (deleteSelectedLocalBtn) {
+            deleteSelectedLocalBtn.addEventListener('click', async () => {
+                if (selectedLogIds.size === 0) return;
+                const count = selectedLogIds.size;
+                if (confirm(`Delete ${count} selected log(s) from LOCAL storage/database? (Main Database will NOT be affected)`)) {
+                    try {
+                        const res = await fetch('/api/logs/batch-delete', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ log_ids: Array.from(selectedLogIds), purge_supabase: false })
+                        });
+                        const data = await res.json();
+                        if (data.success) {
+                            showToast(data.message, 'success');
+                            selectedLogIds.clear();
+                            updateSelectionUI();
+                            fetchLogs();
+                        } else {
+                            showToast(data.message || 'Failed to delete selected logs.', 'danger');
+                        }
+                    } catch (err) {
+                        showToast('Network error while deleting selected logs.', 'danger');
+                    }
+                }
+            });
+        }
+
+        // Delete Selected from Main DB (Supabase + Local)
+        const deleteSelectedMainBtn = document.getElementById('btnDeleteSelectedMainDB');
+        if (deleteSelectedMainBtn) {
+            deleteSelectedMainBtn.addEventListener('click', () => {
+                if (selectedLogIds.size === 0) return;
+                const count = selectedLogIds.size;
+                showMainDbDeleteModal({
+                    targetText: `${count} Selected Log Records`,
+                    warningStatement: `This action will permanently delete <strong>${count} SELECTED LOGS, ANOMALIES, AND AI ANALYSES</strong> from your <strong>MAIN SUPABASE DATABASE</strong> and local storage.`,
+                    onConfirm: async () => {
+                        const res = await fetch('/api/logs/batch-delete', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ log_ids: Array.from(selectedLogIds), purge_supabase: true })
+                        });
+                        const data = await res.json();
+                        if (data.success) {
+                            showToast(data.message, 'success');
+                            selectedLogIds.clear();
+                            updateSelectionUI();
+                            fetchLogs();
+                        } else {
+                            showToast(data.message || 'Failed to delete selected logs from main database.', 'danger');
+                        }
+                    }
+                });
+            });
+        }
+
         fetchLogs();
     }
 
@@ -852,7 +971,7 @@ window.LogApp = (function () {
             if (!data.items || data.items.length === 0) {
                 tbody.innerHTML = `
                     <tr>
-                        <td colspan="10" class="text-center py-5 text-muted">
+                        <td colspan="11" class="text-center py-5 text-muted">
                             <i class="bi bi-inbox display-6 d-block mb-2"></i>
                             No log records found matching your filter criteria.
                         </td>
@@ -889,6 +1008,9 @@ window.LogApp = (function () {
 
                 rowsHtml += `
                     <tr class="${rowClass}">
+                        <td class="text-center">
+                            <input class="form-check-input row-select-checkbox" type="checkbox" data-log-id="${log.id}">
+                        </td>
                         <td class="font-monospace small text-nowrap">${log.timestamp}</td>
                         <td><span class="badge bg-secondary-subtle text-body border">${log.source}</span></td>
                         <td><span class="badge bg-primary-subtle text-primary border">${log.event_type}</span></td>
@@ -920,6 +1042,19 @@ window.LogApp = (function () {
 
             tbody.innerHTML = rowsHtml;
             renderPagination(data.pages, data.page);
+
+            // Bind row selection checkboxes
+            tbody.querySelectorAll('.row-select-checkbox').forEach(cb => {
+                cb.addEventListener('change', () => {
+                    const id = parseInt(cb.getAttribute('data-log-id'));
+                    if (cb.checked) {
+                        selectedLogIds.add(id);
+                    } else {
+                        selectedLogIds.delete(id);
+                    }
+                    updateSelectionUI();
+                });
+            });
 
             // 1. Bind Delete Local buttons (deletes from local SQLite only)
             document.querySelectorAll('.btn-delete-local').forEach(btn => {
