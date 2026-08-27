@@ -133,60 +133,56 @@ window.LogApp = (function () {
     }
 
     // =========================================================================
-    // 2b. Global Delete Confirmation Modal Handler
+    // 2b. Main Database (Supabase) Permanent Deletion Warning Modal Handler
     // =========================================================================
-    let activeDeleteCallback = null;
+    let activeMainDbDeleteCallback = null;
 
-    function showDeleteConfirmationModal({ targetDesc, onConfirm }) {
-        const modalEl = document.getElementById('deleteConfirmModal');
-        const descEl = document.getElementById('deleteModalTargetDesc');
-        const radioLocal = document.getElementById('deleteScopeLocal');
+    function showMainDbDeleteModal({ targetText, warningStatement, onConfirm }) {
+        const modalEl = document.getElementById('mainDbDeleteModal');
+        const targetEl = document.getElementById('mainDbTargetText');
+        const warnEl = document.getElementById('mainDbWarningStatement');
 
         if (!modalEl) {
-            // Fallback if modal not present
-            if (confirm(targetDesc || 'Are you sure you want to delete this data?')) {
-                onConfirm(false);
+            if (confirm(`⚠️ WARNING: Permanently delete ${targetText} from MAIN DATABASE (Supabase) and local storage? This action cannot be recovered.`)) {
+                onConfirm();
             }
             return;
         }
 
-        if (descEl && targetDesc) descEl.textContent = targetDesc;
-        if (radioLocal) radioLocal.checked = true; // Default to safe local deletion
+        if (targetEl && targetText) targetEl.textContent = targetText;
+        if (warnEl && warningStatement) warnEl.innerHTML = warningStatement;
 
-        activeDeleteCallback = onConfirm;
+        activeMainDbDeleteCallback = onConfirm;
         const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
         modal.show();
     }
 
     // Initialize modal confirm button listener once
     document.addEventListener('DOMContentLoaded', () => {
-        const confirmDeleteBtn = document.getElementById('btnConfirmDeleteModal');
-        if (confirmDeleteBtn) {
-            confirmDeleteBtn.addEventListener('click', async () => {
-                const scope = document.querySelector('input[name="deleteScopeRadio"]:checked')?.value || 'local';
-                const purgeSupabase = (scope === 'supabase');
-
-                const spinner = document.getElementById('deleteModalSpinner');
-                const icon = document.getElementById('deleteModalIcon');
-                const modalEl = document.getElementById('deleteConfirmModal');
+        const confirmBtn = document.getElementById('btnConfirmMainDbDelete');
+        if (confirmBtn) {
+            confirmBtn.addEventListener('click', async () => {
+                const spinner = document.getElementById('mainDbDeleteSpinner');
+                const icon = document.getElementById('mainDbDeleteIcon');
+                const modalEl = document.getElementById('mainDbDeleteModal');
                 const modal = modalEl ? bootstrap.Modal.getInstance(modalEl) : null;
 
-                confirmDeleteBtn.disabled = true;
+                confirmBtn.disabled = true;
                 if (spinner) spinner.classList.remove('d-none');
                 if (icon) icon.classList.add('d-none');
 
                 try {
-                    if (activeDeleteCallback) {
-                        await activeDeleteCallback(purgeSupabase);
+                    if (activeMainDbDeleteCallback) {
+                        await activeMainDbDeleteCallback();
                     }
                     if (modal) modal.hide();
                 } catch (err) {
-                    showToast(`Deletion error: ${err.message}`, 'danger');
+                    showToast(`Deletion failed: ${err.message}`, 'danger');
                 } finally {
-                    confirmDeleteBtn.disabled = false;
+                    confirmBtn.disabled = false;
                     if (spinner) spinner.classList.add('d-none');
                     if (icon) icon.classList.remove('d-none');
-                    activeDeleteCallback = null;
+                    activeMainDbDeleteCallback = null;
                 }
             });
         }
@@ -693,22 +689,49 @@ window.LogApp = (function () {
             });
         }
 
-        if (clearAllBtn) {
-            clearAllBtn.addEventListener('click', () => {
-                showDeleteConfirmationModal({
-                    targetDesc: 'Are you sure you want to purge ALL logs across the system? Choose whether to delete from local cache only or permanently wipe from Supabase cloud database as well.',
-                    onConfirm: async (purgeSupabase) => {
+        const clearLocalBtn = document.getElementById('btnClearLocalLogs');
+        const purgeMainBtn = document.getElementById('btnPurgeMainDB');
+
+        if (clearLocalBtn) {
+            clearLocalBtn.addEventListener('click', async () => {
+                if (confirm('Delete all log data from LOCAL storage/database? (Your Main Supabase Cloud Database will NOT be affected)')) {
+                    try {
                         const res = await fetch('/api/logs/batch-delete', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ clear_all: true, purge_supabase: purgeSupabase })
+                            body: JSON.stringify({ clear_all: true, purge_supabase: false })
                         });
                         const data = await res.json();
                         if (data.success) {
                             showToast(data.message, 'success');
                             fetchLogs();
                         } else {
-                            showToast(data.message || 'Failed to clear logs.', 'danger');
+                            showToast(data.message || 'Failed to clear local logs.', 'danger');
+                        }
+                    } catch (err) {
+                        showToast('Failed to clear local logs.', 'danger');
+                    }
+                }
+            });
+        }
+
+        if (purgeMainBtn) {
+            purgeMainBtn.addEventListener('click', () => {
+                showMainDbDeleteModal({
+                    targetText: 'ALL RECORDS in Main Database & Local Storage',
+                    warningStatement: 'This action will permanently delete <strong>ALL LOGS, ANOMALIES, AND AI ANALYSES</strong> from your <strong>MAIN DATABASE (SUPABASE CLOUD)</strong> and local database.',
+                    onConfirm: async () => {
+                        const res = await fetch('/api/logs/batch-delete', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ clear_all: true, purge_supabase: true })
+                        });
+                        const data = await res.json();
+                        if (data.success) {
+                            showToast(data.message, 'success');
+                            fetchLogs();
+                        } else {
+                            showToast(data.message || 'Failed to purge main database.', 'danger');
                         }
                     }
                 });
@@ -802,8 +825,11 @@ window.LogApp = (function () {
                             <a href="/logs/${log.id}" class="btn btn-xs btn-outline-primary btn-sm me-1" title="Inspect Log & AI Explanation">
                                 <i class="bi bi-eye"></i>
                             </a>
-                            <button class="btn btn-xs btn-outline-danger btn-sm btn-delete-log" data-log-id="${log.id}" title="Delete Record">
+                            <button class="btn btn-xs btn-outline-secondary btn-sm btn-delete-local me-1" data-log-id="${log.id}" title="Delete from Local Database only">
                                 <i class="bi bi-trash"></i>
+                            </button>
+                            <button class="btn btn-xs btn-outline-danger btn-sm btn-delete-main" data-log-id="${log.id}" title="Permanently Delete from Main Database (Supabase Cloud)">
+                                <i class="bi bi-cloud-slash"></i>
                             </button>
                         </td>
                     </tr>
@@ -813,20 +839,42 @@ window.LogApp = (function () {
             tbody.innerHTML = rowsHtml;
             renderPagination(data.pages, data.page);
 
-            // Bind delete single log buttons with modal confirmation
-            document.querySelectorAll('.btn-delete-log').forEach(btn => {
-                btn.addEventListener('click', () => {
+            // 1. Bind Delete Local buttons (deletes from local SQLite only)
+            document.querySelectorAll('.btn-delete-local').forEach(btn => {
+                btn.addEventListener('click', async () => {
                     const id = btn.getAttribute('data-log-id');
-                    showDeleteConfirmationModal({
-                        targetDesc: `Are you sure you want to delete log record #${id}? Choose whether to remove from local database only or permanently purge from Supabase cloud database.`,
-                        onConfirm: async (purgeSupabase) => {
-                            const delRes = await fetch(`/api/logs/${id}?purge_supabase=${purgeSupabase}`, { method: 'DELETE' });
+                    if (confirm(`Delete log #${id} from LOCAL database only? (Supabase cloud database will remain untouched)`)) {
+                        try {
+                            const delRes = await fetch(`/api/logs/${id}?purge_supabase=false`, { method: 'DELETE' });
                             const delData = await delRes.json();
                             if (delData.success) {
                                 showToast(delData.message, 'success');
                                 fetchLogs();
                             } else {
-                                showToast(delData.message || 'Failed to delete log.', 'danger');
+                                showToast(delData.message || 'Failed to delete log locally.', 'danger');
+                            }
+                        } catch (e) {
+                            showToast('Failed to delete log.', 'danger');
+                        }
+                    }
+                });
+            });
+
+            // 2. Bind Permanently Delete from Main Database (Supabase Cloud + Local)
+            document.querySelectorAll('.btn-delete-main').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const id = btn.getAttribute('data-log-id');
+                    showMainDbDeleteModal({
+                        targetText: `Log Record #${id}`,
+                        warningStatement: `This action will permanently delete Log #${id} from your <strong>MAIN SUPABASE DATABASE</strong> and local storage.`,
+                        onConfirm: async () => {
+                            const delRes = await fetch(`/api/logs/${id}?purge_supabase=true`, { method: 'DELETE' });
+                            const delData = await delRes.json();
+                            if (delData.success) {
+                                showToast(delData.message, 'success');
+                                fetchLogs();
+                            } else {
+                                showToast(delData.message || 'Failed to delete log from main database.', 'danger');
                             }
                         }
                     });
@@ -900,21 +948,45 @@ window.LogApp = (function () {
     // =========================================================================
     function initLogDetail() {
         const aiBtn = document.getElementById('btnGenerateAI');
-        const deleteBtn = document.getElementById('btnDeleteCurrentLog');
+        const deleteLocalBtn = document.getElementById('btnDeleteLocal');
+        const deleteMainBtn = document.getElementById('btnDeleteMainDB');
 
-        if (deleteBtn) {
-            deleteBtn.addEventListener('click', () => {
-                const logId = deleteBtn.getAttribute('data-log-id');
-                showDeleteConfirmationModal({
-                    targetDesc: `Are you sure you want to delete log inspection #${logId}? Choose whether to delete from local cache only or permanently purge from Supabase cloud database.`,
-                    onConfirm: async (purgeSupabase) => {
-                        const res = await fetch(`/api/logs/${logId}?purge_supabase=${purgeSupabase}`, { method: 'DELETE' });
+        // Button 1: Delete Local Only
+        if (deleteLocalBtn) {
+            deleteLocalBtn.addEventListener('click', async () => {
+                const logId = deleteLocalBtn.getAttribute('data-log-id');
+                if (confirm(`Delete log #${logId} from LOCAL storage/database only? (Your Main Supabase Cloud Database will NOT be affected)`)) {
+                    try {
+                        const res = await fetch(`/api/logs/${logId}?purge_supabase=false`, { method: 'DELETE' });
                         const data = await res.json();
                         if (data.success) {
                             showToast(data.message, 'success');
                             setTimeout(() => window.location.href = '/logs', 800);
                         } else {
-                            showToast(data.message || 'Failed to delete log.', 'danger');
+                            showToast(data.message || 'Failed to delete log locally.', 'danger');
+                        }
+                    } catch (e) {
+                        showToast('Failed to delete log from local database.', 'danger');
+                    }
+                }
+            });
+        }
+
+        // Button 2: Permanently Delete from Main Database (Supabase + Local)
+        if (deleteMainBtn) {
+            deleteMainBtn.addEventListener('click', () => {
+                const logId = deleteMainBtn.getAttribute('data-log-id');
+                showMainDbDeleteModal({
+                    targetText: `Log Record #${logId}`,
+                    warningStatement: `This action will permanently delete Log #${logId} from your <strong>MAIN SUPABASE DATABASE</strong> and local storage.`,
+                    onConfirm: async () => {
+                        const res = await fetch(`/api/logs/${logId}?purge_supabase=true`, { method: 'DELETE' });
+                        const data = await res.json();
+                        if (data.success) {
+                            showToast(data.message, 'success');
+                            setTimeout(() => window.location.href = '/logs', 800);
+                        } else {
+                            showToast(data.message || 'Failed to delete log from main database.', 'danger');
                         }
                     }
                 });

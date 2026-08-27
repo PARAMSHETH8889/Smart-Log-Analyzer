@@ -75,10 +75,13 @@
                         </label>
                     </div>
 
-                    <div class="d-flex align-items-center gap-3">
-                        <span class="text-muted small" id="logsCountSummary">Showing 0 of 0 logs</span>
-                        <button type="button" class="btn btn-sm btn-outline-danger" id="btnClearAllLogs" title="Delete all logs from database">
-                            <i class="bi bi-trash3 me-1"></i>Purge All Logs
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="text-muted small me-2" id="logsCountSummary">Showing 0 of 0 logs</span>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" id="btnClearLocalLogs" title="Delete data from local storage/database only">
+                            <i class="bi bi-hdd me-1"></i>Delete Local Data
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-danger" id="btnPurgeMainDB" title="Permanently delete all records from Main Supabase Cloud Database">
+                            <i class="bi bi-cloud-slash me-1"></i>Permanently Delete from Main DB
                         </button>
                     </div>
                 </div>
@@ -101,7 +104,7 @@
                         <th style="width: 90px;">Detection</th>
                         <th style="width: 90px;">AI Status</th>
                         <th style="min-width: 200px;">Message / Reason</th>
-                        <th style="width: 90px;" class="text-end">Actions</th>
+                        <th style="width: 120px;" class="text-end">Actions</th>
                     </tr>
                 </thead>
                 <tbody id="logsTableBody">
