@@ -43,6 +43,11 @@ class Config:
     )  # 16 MB
     SAMPLE_DATA_DIR = BASE_DIR / "sample_data"
 
+    # Session & Cookie Security (OWASP Top 10 hardening)
+    SESSION_COOKIE_HTTPONLY = True
+    SESSION_COOKIE_SAMESITE = "Lax"
+    SESSION_COOKIE_SECURE = os.getenv("FLASK_ENV") == "production"
+
 
 class DevelopmentConfig(Config):
     """Development configuration."""

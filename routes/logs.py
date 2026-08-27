@@ -15,6 +15,7 @@ from flask import (
     Response,
     send_file,
 )
+from werkzeug.utils import secure_filename
 from sqlalchemy import or_, desc, asc
 
 from routes import logs_bp
@@ -26,6 +27,19 @@ from services.anomaly_detector import AnomalyDetector
 from services.ai_service import GeminiAIService
 from services.supabase_service import SupabaseService
 from config import Config
+
+# Whitelisted columns for dynamic sorting (prevents SQL/ORM injection)
+ALLOWED_SORT_COLUMNS = {
+    "id": Log.id,
+    "timestamp": Log.timestamp,
+    "source": Log.source,
+    "event_type": Log.event_type,
+    "severity": Log.severity,
+    "status_code": Log.status_code,
+    "anomaly": Log.anomaly,
+    "anomaly_score": Log.anomaly_score,
+    "created_at": Log.created_at,
+}
 
 
 @logs_bp.route("/logs")
@@ -110,8 +124,8 @@ def get_logs_api():
         except ValueError:
             pass
 
-    # Ordering
-    sort_column = getattr(Log, sort_by, Log.timestamp)
+    # Ordering with strict whitelisting to prevent query injection
+    sort_column = ALLOWED_SORT_COLUMNS.get(sort_by, Log.timestamp)
     if sort_dir == "asc":
         query = query.order_by(asc(sort_column))
     else:
@@ -153,6 +167,7 @@ def get_log_context(log_id: int):
 def upload_logs():
     """
     Handle CSV log dataset upload, validation, and ingestion.
+    Includes filename sanitization and MIME-type validation.
     """
     if "file" not in request.files:
         return jsonify({
@@ -161,16 +176,22 @@ def upload_logs():
         }), 400
 
     file = request.files["file"]
-    if file.filename == "":
+    if not file or file.filename == "":
         return jsonify({
             "success": False,
             "message": "No file selected for upload.",
         }), 400
 
-    if not file.filename.lower().endswith((".csv", ".txt")):
+    # Sanitize filename (removes null bytes, path traversal attempts like ../../)
+    sanitized_name = secure_filename(file.filename)
+    if not sanitized_name:
+        sanitized_name = "uploaded_logs.csv"
+
+    # Validate file extension strictly
+    if not sanitized_name.lower().endswith((".csv", ".txt", ".log")):
         return jsonify({
             "success": False,
-            "message": "Invalid file format. Only CSV files are supported.",
+            "message": "Invalid file format. Only CSV or structured log files are supported.",
         }), 400
 
     # Parse and validate uploaded content

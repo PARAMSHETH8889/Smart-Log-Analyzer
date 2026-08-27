@@ -35,6 +35,30 @@ def create_app(config_name: str = "default") -> Flask:
     with app.app_context():
         db.create_all()
 
+    # HTTP Security Headers (OWASP Defense-in-Depth)
+    @app.after_request
+    def set_security_headers(response):
+        # Prevent MIME type sniffing (stops executable script tricks disguised as images/text)
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        # Prevent Clickjacking (disallow embedding within rogue external frames)
+        response.headers["X-Frame-Options"] = "SAMEORIGIN"
+        # Prevent URL/token leakage in the Referer header
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        # Restrict hardware permissions (camera, microphone, geolocation)
+        response.headers["Permissions-Policy"] = "geolocation=(), camera=(), microphone=()"
+        # Content Security Policy (permits verified CDNs for Bootstrap & Chart.js, Google Fonts, and self)
+        csp = (
+            "default-src 'self'; "
+            "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
+            "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com; "
+            "font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net; "
+            "img-src 'self' data:; "
+            "connect-src 'self' https://*.supabase.co https://generativelanguage.googleapis.com; "
+            "frame-ancestors 'self';"
+        )
+        response.headers["Content-Security-Policy"] = csp
+        return response
+
     # Error handlers
     @app.errorhandler(404)
     def page_not_found(e):
@@ -46,6 +70,13 @@ def create_app(config_name: str = "default") -> Flask:
             "success": False,
             "message": "File exceeds maximum allowed upload size (16 MB).",
         }), 413
+
+    @app.errorhandler(429)
+    def rate_limit_exceeded(e):
+        return jsonify({
+            "success": False,
+            "message": "Too many requests. Please slow down.",
+        }), 429
 
     @app.errorhandler(500)
     def internal_server_error(e):
