@@ -1307,13 +1307,16 @@ window.LogApp = (function () {
     // 8. Live Computer Log Monitor
     // =========================================================================
     function initLiveMonitor() {
-        let isStreaming = true;
+        const tableBody = document.getElementById('liveLogsTableBody');
+        if (!tableBody) return; // Not on the live monitor page
+
+        let isStreaming = false;
+        let isFetching = false;
         let streamTimer = null;
         let capturedCount = 0;
         let anomaliesCount = 0;
         let seenIds = new Set();
 
-        const tableBody = document.getElementById('liveLogsTableBody');
         const emptyRow = document.getElementById('liveEmptyRow');
         const capturedMetric = document.getElementById('liveCapturedCount');
         const anomaliesMetric = document.getElementById('liveAnomaliesCount');
@@ -1331,14 +1334,26 @@ window.LogApp = (function () {
         const scrollContainer = document.getElementById('liveTableScrollContainer');
         const autoScrollChk = document.getElementById('chkAutoScroll');
 
-        async function captureEvents() {
+        async function captureEvents(isManual = false) {
+            if (!isStreaming && !isManual) return;
+            if (isFetching) return;
+
+            isFetching = true;
             const channel = channelSelect ? channelSelect.value : 'Application';
+
             try {
                 const res = await fetch('/api/live/capture', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ count: 4, channel: channel })
                 });
+
+                // If user paused while request was in-flight, discard and stop updating
+                if (!isStreaming && !isManual) {
+                    isFetching = false;
+                    return;
+                }
+
                 const resText = await res.text();
                 let data;
                 try { data = JSON.parse(resText); } catch(e) { data = { success: false }; }
@@ -1406,13 +1421,19 @@ window.LogApp = (function () {
                 }
             } catch (err) {
                 console.error('[LiveStream Error]', err);
+            } finally {
+                isFetching = false;
             }
         }
 
         function startStream() {
-            stopStream();
+            if (streamTimer) {
+                clearInterval(streamTimer);
+                streamTimer = null;
+            }
             const interval = parseInt(intervalSelect ? intervalSelect.value : 3000) || 3000;
             isStreaming = true;
+
             if (statusText) {
                 statusText.textContent = 'Active Streaming';
                 statusText.className = 'fw-bold mb-0 text-success';
@@ -1421,11 +1442,14 @@ window.LogApp = (function () {
                 statusBadge.className = 'badge bg-danger d-inline-flex align-items-center gap-1';
                 statusBadge.innerHTML = '<span class="spinner-grow spinner-grow-sm text-light" style="width: 0.5rem; height: 0.5rem;" role="status"></span> LIVE STREAM';
             }
-            if (streamIcon) streamIcon.className = 'bi bi-pause-fill me-1';
+            if (toggleStreamBtn) {
+                toggleStreamBtn.className = 'btn btn-outline-warning btn-sm d-inline-flex align-items-center gap-1';
+            }
+            if (streamIcon) streamIcon.className = 'bi bi-pause-circle-fill text-warning me-1';
             if (streamText) streamText.textContent = 'Pause Auto-Stream';
             
             captureEvents();
-            streamTimer = setInterval(captureEvents, interval);
+            streamTimer = setInterval(() => captureEvents(false), interval);
         }
 
         function stopStream() {
@@ -1434,31 +1458,38 @@ window.LogApp = (function () {
                 streamTimer = null;
             }
             isStreaming = false;
+
             if (statusText) {
                 statusText.textContent = 'Stream Paused';
                 statusText.className = 'fw-bold mb-0 text-secondary';
             }
             if (statusBadge) {
                 statusBadge.className = 'badge bg-secondary d-inline-flex align-items-center gap-1';
-                statusBadge.innerHTML = '<i class="bi bi-pause-circle"></i> PAUSED';
+                statusBadge.innerHTML = '<i class="bi bi-pause-circle me-1"></i> PAUSED';
             }
-            if (streamIcon) streamIcon.className = 'bi bi-play-fill me-1';
+            if (toggleStreamBtn) {
+                toggleStreamBtn.className = 'btn btn-success btn-sm d-inline-flex align-items-center gap-1';
+            }
+            if (streamIcon) streamIcon.className = 'bi bi-play-circle-fill me-1';
             if (streamText) streamText.textContent = 'Resume Auto-Stream';
         }
 
         if (captureNowBtn) {
             captureNowBtn.addEventListener('click', () => {
-                captureEvents();
+                captureEvents(true);
                 showToast('Capturing live log events from host PC...', 'info');
             });
         }
 
         if (toggleStreamBtn) {
-            toggleStreamBtn.addEventListener('click', () => {
+            toggleStreamBtn.addEventListener('click', (e) => {
+                e.preventDefault();
                 if (isStreaming) {
                     stopStream();
+                    showToast('Live stream paused.', 'secondary');
                 } else {
                     startStream();
+                    showToast('Live stream resumed.', 'success');
                 }
             });
         }
@@ -1467,6 +1498,14 @@ window.LogApp = (function () {
             intervalSelect.addEventListener('change', () => {
                 if (isStreaming) {
                     startStream();
+                }
+            });
+        }
+
+        if (channelSelect) {
+            channelSelect.addEventListener('change', () => {
+                if (isStreaming) {
+                    captureEvents(false);
                 }
             });
         }
@@ -1486,6 +1525,7 @@ window.LogApp = (function () {
                 seenIds.clear();
                 if (capturedMetric) capturedMetric.textContent = '0';
                 if (anomaliesMetric) anomaliesMetric.textContent = '0';
+                showToast('Display buffer cleared.', 'info');
             });
         }
 
