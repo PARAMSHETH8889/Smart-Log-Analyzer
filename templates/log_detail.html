@@ -1,0 +1,289 @@
+{% extends "base.html" %}
+
+{% block title %}Log #{{ log.id }} Details - Smart Log Analyzer{% endblock %}
+
+{% block header_title %}
+<div class="d-flex align-items-center gap-2">
+    <a href="{{ url_for('logs.logs_view') }}" class="btn btn-sm btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i>
+    </a>
+    <h4 class="mb-0">Log Inspection #{{ log.id }}</h4>
+    {% if log.anomaly %}
+        <span class="badge bg-danger">ANOMALY DETECTED</span>
+    {% else %}
+        <span class="badge bg-success">NORMAL LOG</span>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="log-detail-container">
+    <div class="row g-4">
+        <!-- Left Column: Log Details & Anomaly Breakdown -->
+        <div class="col-12 col-xl-7">
+            <!-- Card 1: Core Log Metadata -->
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0 fw-semibold">
+                        <i class="bi bi-file-earmark-code text-primary me-2"></i>Log Record Metadata
+                    </h6>
+                    <button class="btn btn-sm btn-outline-danger" id="btnDeleteCurrentLog" data-log-id="{{ log.id }}">
+                        <i class="bi bi-trash3 me-1"></i>Delete Log
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-sm-6 col-md-4">
+                            <span class="detail-label">Timestamp</span>
+                            <div class="detail-value font-monospace">
+                                {{ log.timestamp.strftime('%Y-%m-%d %H:%M:%S') if log.timestamp else 'N/A' }}
+                            </div>
+                        </div>
+                        <div class="col-sm-6 col-md-4">
+                            <span class="detail-label">Source Service</span>
+                            <div class="detail-value">
+                                <span class="badge bg-secondary-subtle text-body border">{{ log.source }}</span>
+                            </div>
+                        </div>
+                        <div class="col-sm-6 col-md-4">
+                            <span class="detail-label">Event Type</span>
+                            <div class="detail-value">
+                                <span class="badge bg-primary-subtle text-primary border">{{ log.event_type }}</span>
+                            </div>
+                        </div>
+                        <div class="col-sm-6 col-md-4">
+                            <span class="detail-label">Severity</span>
+                            <div class="detail-value">
+                                {% if log.severity == 'CRITICAL' %}
+                                    <span class="badge bg-dark-danger text-white">CRITICAL</span>
+                                {% elif log.severity == 'ERROR' %}
+                                    <span class="badge bg-danger">ERROR</span>
+                                {% elif log.severity == 'WARNING' %}
+                                    <span class="badge bg-warning text-dark">WARNING</span>
+                                {% else %}
+                                    <span class="badge bg-success">INFO</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-sm-6 col-md-4">
+                            <span class="detail-label">HTTP Status Code</span>
+                            <div class="detail-value">
+                                {% if log.status_code %}
+                                    <span class="badge {% if log.status_code >= 500 %}bg-danger{% elif log.status_code >= 400 %}bg-warning text-dark{% else %}bg-success{% endif %}">
+                                        {{ log.status_code }}
+                                    </span>
+                                {% else %}
+                                    <span class="text-muted">N/A</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-sm-6 col-md-4">
+                            <span class="detail-label">Client / Host IP</span>
+                            <div class="detail-value font-monospace">
+                                {{ log.ip_address or 'N/A' }}
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <span class="detail-label">Endpoint / Route</span>
+                            <div class="detail-value font-monospace">
+                                {{ log.endpoint or 'N/A' }}
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <span class="detail-label">Full Message</span>
+                            <div class="log-message-box p-3 rounded font-monospace small">
+                                {{ log.message }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card 2: Deterministic Anomaly Detection Breakdown -->
+            <div class="card mb-4 border-start border-4 {% if log.anomaly %}border-danger{% else %}border-success{% endif %}">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0 fw-semibold">
+                        <i class="bi bi-cpu text-primary me-2"></i>Deterministic Anomaly Detection (Non-AI)
+                    </h6>
+                    <span class="badge bg-info-subtle text-info border border-info-subtle">
+                        100% Programmatic Python Logic
+                    </span>
+                </div>
+                <div class="card-body">
+                    <div class="row align-items-center mb-3">
+                        <div class="col-sm-4 text-center border-end">
+                            <span class="text-muted small">ANOMALY SCORE</span>
+                            <h2 class="display-6 fw-bold mb-0 {% if log.anomaly %}text-danger{% else %}text-success{% endif %}">
+                                {{ "%.1f"|format(log.anomaly_score) }}<span class="fs-6 text-muted">/100</span>
+                            </h2>
+                            <small class="text-muted">Threshold: 50.0</small>
+                        </div>
+                        <div class="col-sm-8 ps-sm-4">
+                            <div class="d-flex justify-content-between small text-muted mb-1">
+                                <span>Normal (0)</span>
+                                <span>Threshold (50)</span>
+                                <span>Critical (100)</span>
+                            </div>
+                            <div class="progress" style="height: 12px;">
+                                <div class="progress-bar {% if log.anomaly_score >= 70 %}bg-danger{% elif log.anomaly_score >= 50 %}bg-warning text-dark{% else %}bg-success{% endif %}" 
+                                     role="progressbar" 
+                                     style="width: {{ log.anomaly_score }}%;" 
+                                     aria-valuenow="{{ log.anomaly_score }}" 
+                                     aria-valuemin="0" 
+                                     aria-valuemax="100">
+                                </div>
+                            </div>
+                            <div class="mt-2 small text-muted">
+                                Status: <strong>{% if log.anomaly %}FLAGGED AS ANOMALOUS{% else %}WITHIN NORMAL BOUNDS{% endif %}</strong>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="p-3 bg-body-tertiary rounded">
+                        <div class="fw-semibold small text-muted mb-1">DETECTION REASONING & SIGNALS:</div>
+                        <p class="mb-0 text-body font-monospace small">
+                            {{ log.anomaly_reason or 'No anomaly signals triggered. Normal log behavior.' }}
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card 3: Surrounding Log Timeline Context -->
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0 fw-semibold">
+                        <i class="bi bi-clock-history text-primary me-2"></i>Surrounding Event Context Timeline
+                    </h6>
+                    <small class="text-muted">Temporal sequence from the same service/IP</small>
+                </div>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush">
+                        {% for ctx in surrounding_context %}
+                            <div class="list-group-item {% if ctx.id == log.id %}list-group-item-danger border-start border-4 border-danger{% endif %} py-2 px-3">
+                                <div class="d-flex justify-content-between align-items-center small">
+                                    <span class="font-monospace text-muted">{{ ctx.timestamp }}</span>
+                                    <div>
+                                        {% if ctx.id == log.id %}
+                                            <span class="badge bg-danger">CURRENT ANOMALY</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary-subtle text-body">{{ ctx.relative_position }}</span>
+                                        {% endif %}
+                                        <span class="badge bg-light text-dark border">{{ ctx.severity }}</span>
+                                    </div>
+                                </div>
+                                <div class="small font-monospace text-truncate mt-1">
+                                    {{ ctx.source }}: {{ ctx.message }}
+                                </div>
+                            </div>
+                        {% else %}
+                            <div class="p-3 text-center text-muted small">No surrounding logs available.</div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column: Google Gemini AI Analysis Panel -->
+        <div class="col-12 col-xl-5">
+            <div class="card ai-card sticky-top" style="top: 20px;">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="bi bi-stars text-warning fs-5"></i>
+                        <h6 class="mb-0 fw-semibold">Gemini AI Root-Cause Analysis</h6>
+                    </div>
+                    {% if log.ai_model %}
+                        <span class="badge bg-primary-subtle text-primary border">{{ log.ai_model }}</span>
+                    {% endif %}
+                </div>
+                <div class="card-body">
+                    <!-- AI Policy Notice -->
+                    <div class="alert alert-secondary py-2 small mb-3">
+                        <i class="bi bi-info-circle me-1"></i>
+                        <strong>AI Guardrail:</strong> AI receives only logs <em>already flagged</em> by our Python detector. Gemini explains why it occurred and recommends remediation.
+                    </div>
+
+                    {% if not log.anomaly %}
+                        <div class="text-center py-5 text-muted">
+                            <i class="bi bi-shield-check text-success display-4 mb-2"></i>
+                            <h6>No Anomaly Detected</h6>
+                            <p class="small">AI analysis is strictly reserved for logs detected as anomalies by our deterministic algorithm.</p>
+                        </div>
+                    {% else %}
+                        <!-- AI Action Controls -->
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <span class="small text-muted" id="aiStatusText">
+                                {% if log.ai_explanation %}
+                                    Analysis generated on {{ log.ai_analyzed_at.strftime('%Y-%m-%d %H:%M') if log.ai_analyzed_at else 'N/A' }}
+                                {% else %}
+                                    Ready for AI root-cause investigation
+                                {% endif %}
+                            </span>
+                            <button class="btn btn-sm btn-primary d-inline-flex align-items-center gap-1" id="btnGenerateAI" data-log-id="{{ log.id }}">
+                                <span class="spinner-border spinner-border-sm d-none" id="aiSpinner"></span>
+                                <i class="bi bi-stars" id="aiBtnIcon"></i>
+                                <span id="aiBtnText">{% if log.ai_explanation %}Regenerate Analysis{% else %}Generate AI Analysis{% endif %}</span>
+                            </button>
+                        </div>
+
+                        <!-- AI Error Alert Box (Dynamic) -->
+                        <div class="alert alert-danger d-none small mb-3" id="aiErrorAlert"></div>
+
+                        <!-- AI Results Container -->
+                        <div id="aiResultsContainer" class="{% if not log.ai_explanation %}d-none{% endif %}">
+                            <!-- Plain English Explanation -->
+                            <div class="ai-section mb-3">
+                                <div class="ai-section-title">
+                                    <i class="bi bi-chat-left-quote text-primary me-1"></i>PLAIN-ENGLISH EXPLANATION
+                                </div>
+                                <div class="ai-section-body" id="aiExplanationText">
+                                    {{ log.ai_explanation or '' }}
+                                </div>
+                            </div>
+
+                            <!-- Likely Root Cause -->
+                            <div class="ai-section mb-3">
+                                <div class="ai-section-title">
+                                    <i class="bi bi-search text-danger me-1"></i>LIKELY ROOT CAUSE
+                                </div>
+                                <div class="ai-section-body" id="aiRootCauseText">
+                                    {{ log.ai_root_cause or '' }}
+                                </div>
+                            </div>
+
+                            <!-- Recommended Next Step -->
+                            <div class="ai-section mb-3">
+                                <div class="ai-section-title">
+                                    <i class="bi bi-arrow-right-circle text-success me-1"></i>RECOMMENDED NEXT STEP
+                                </div>
+                                <div class="ai-section-body" id="aiNextStepText">
+                                    {{ log.ai_next_step or '' }}
+                                </div>
+                            </div>
+
+                            <div class="text-end small text-muted">
+                                <em>Verified AI-generated investigation insight</em>
+                            </div>
+                        </div>
+
+                        <!-- Empty State when no AI analysis yet -->
+                        <div id="aiEmptyState" class="text-center py-4 text-muted {% if log.ai_explanation %}d-none{% endif %}">
+                            <i class="bi bi-robot text-primary display-5 mb-2 opacity-50"></i>
+                            <p class="small mb-0">Click "Generate AI Analysis" to consult Google Gemini for root-cause synthesis and remediation steps.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        if (window.LogApp) {
+            window.LogApp.initLogDetail();
+        }
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,154 @@
+{% extends "base.html" %}
+
+{% block title %}Log Explorer - Smart Log Analyzer & Anomaly Detector{% endblock %}
+
+{% block header_title %}
+<div class="d-flex align-items-center gap-2">
+    <h4 class="mb-0">Log Explorer</h4>
+    <span class="badge bg-secondary-subtle text-secondary border">Search & Analysis</span>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="logs-container">
+    <!-- Filter Toolbar Card -->
+    <div class="card mb-4 filter-card">
+        <div class="card-body">
+            <form id="filterForm" class="row g-3 align-items-end">
+                <!-- Search Input -->
+                <div class="col-12 col-md-4 col-lg-3">
+                    <label class="form-label small fw-semibold">Search Keywords</label>
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text"><i class="bi bi-search"></i></span>
+                        <input type="text" id="filterSearch" class="form-control" placeholder="Message, IP, endpoint...">
+                    </div>
+                </div>
+
+                <!-- Severity Dropdown -->
+                <div class="col-6 col-md-2 col-lg-2">
+                    <label class="form-label small fw-semibold">Severity</label>
+                    <select id="filterSeverity" class="form-select form-select-sm">
+                        <option value="ALL">All Severities</option>
+                        <option value="INFO">INFO</option>
+                        <option value="WARNING">WARNING</option>
+                        <option value="ERROR">ERROR</option>
+                        <option value="CRITICAL">CRITICAL</option>
+                    </select>
+                </div>
+
+                <!-- Source Dropdown -->
+                <div class="col-6 col-md-3 col-lg-2">
+                    <label class="form-label small fw-semibold">Service Source</label>
+                    <select id="filterSource" class="form-select form-select-sm">
+                        <option value="ALL">All Sources</option>
+                        {% for src in sources %}
+                        <option value="{{ src }}">{{ src }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Date Range (Start Date) -->
+                <div class="col-6 col-md-3 col-lg-2">
+                    <label class="form-label small fw-semibold">From Date</label>
+                    <input type="date" id="filterStartDate" class="form-control form-control-sm">
+                </div>
+
+                <!-- Date Range (End Date) -->
+                <div class="col-6 col-md-3 col-lg-2">
+                    <label class="form-label small fw-semibold">To Date</label>
+                    <input type="date" id="filterEndDate" class="form-control form-control-sm">
+                </div>
+
+                <!-- Actions & Toggle -->
+                <div class="col-12 col-lg-1 d-flex gap-2">
+                    <button type="button" class="btn btn-sm btn-outline-secondary w-100" id="btnResetFilters" title="Reset all filters">
+                        <i class="bi bi-arrow-counterclockwise"></i>
+                    </button>
+                </div>
+
+                <!-- Anomaly Only Switch & Summary Info -->
+                <div class="col-12 d-flex flex-wrap justify-content-between align-items-center pt-2 border-top">
+                    <div class="form-check form-switch mb-0">
+                        <input class="form-check-input" type="checkbox" id="filterAnomalyOnly">
+                        <label class="form-check-label fw-semibold text-danger" for="filterAnomalyOnly">
+                            <i class="bi bi-exclamation-diamond me-1"></i>Show Anomalies Only
+                        </label>
+                    </div>
+
+                    <div class="d-flex align-items-center gap-3">
+                        <span class="text-muted small" id="logsCountSummary">Showing 0 of 0 logs</span>
+                        <button type="button" class="btn btn-sm btn-outline-danger" id="btnClearAllLogs" title="Delete all logs from database">
+                            <i class="bi bi-trash3 me-1"></i>Purge All Logs
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Logs Data Table Card -->
+    <div class="card table-card">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0" id="logsTable">
+                <thead>
+                    <tr>
+                        <th style="width: 140px;">Timestamp</th>
+                        <th style="width: 130px;">Source</th>
+                        <th style="width: 130px;">Event</th>
+                        <th style="width: 90px;">Severity</th>
+                        <th style="width: 70px;">Status</th>
+                        <th style="width: 110px;">Anomaly Score</th>
+                        <th style="width: 90px;">Detection</th>
+                        <th style="width: 90px;">AI Status</th>
+                        <th style="min-width: 200px;">Message / Reason</th>
+                        <th style="width: 90px;" class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="logsTableBody">
+                    <tr>
+                        <td colspan="10" class="text-center py-5 text-muted">
+                            <div class="spinner-border spinner-border-sm text-primary me-2"></div>
+                            Loading logs...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination Footer -->
+        <div class="card-footer d-flex flex-wrap justify-content-between align-items-center gap-2">
+            <div class="d-flex align-items-center gap-2">
+                <span class="small text-muted">Rows per page:</span>
+                <select id="selectPerPage" class="form-select form-select-sm" style="width: 75px;">
+                    <option value="15">15</option>
+                    <option value="25" selected>25</option>
+                    <option value="50">50</option>
+                    <option value="100">100</option>
+                </select>
+            </div>
+
+            <nav aria-label="Logs navigation">
+                <ul class="pagination pagination-sm mb-0" id="logsPagination">
+                    <!-- Dynamic Pagination items inserted via app.js -->
+                </ul>
+            </nav>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        if (window.LogApp) {
+            // Check if anomaly_only URL param is present
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('anomaly_only') === 'true') {
+                const anomSwitch = document.getElementById('filterAnomalyOnly');
+                if (anomSwitch) anomSwitch.checked = true;
+            }
+            window.LogApp.initLogsExplorer();
+        }
+    });
+</script>
+{% endblock %}

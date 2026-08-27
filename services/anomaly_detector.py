@@ -1,0 +1,336 @@
+"""
+Deterministic Non-AI Anomaly Detection Engine.
+
+Implements a hybrid approach combining explainable domain heuristics
+(HTTP error codes, CRITICAL/ERROR severities, burst frequencies, rare events)
+and scikit-learn Isolation Forest on log-derived numerical features.
+
+AI is strictly NEVER used here to classify or detect anomalies.
+"""
+
+from typing import List, Dict, Any, Tuple, Optional
+from datetime import datetime, timedelta
+from collections import Counter, defaultdict
+import numpy as np
+import pandas as pd
+from sklearn.ensemble import IsolationForest
+
+from models import db
+from models.models import Log
+from config import Config
+
+# Severity mapping for numerical transformations
+SEVERITY_SCORES = {
+    "INFO": 1,
+    "WARNING": 2,
+    "ERROR": 3,
+    "CRITICAL": 4,
+}
+
+# Configurable Signal Weights
+DEFAULT_WEIGHTS = {
+    "status_500_plus": 40,
+    "severity_critical": 30,
+    "severity_error": 20,
+    "status_auth_fail": 15,
+    "status_repeated_404": 20,
+    "high_frequency": 20,
+    "rare_event": 15,
+    "isolation_forest": 30,
+}
+
+
+class AnomalyDetector:
+    """
+    Programmatic, explainable anomaly detection engine.
+    """
+
+    def __init__(
+        self,
+        threshold: Optional[int] = None,
+        contamination: Optional[float] = None,
+        weights: Optional[Dict[str, int]] = None,
+    ):
+        self.threshold = threshold if threshold is not None else Config.ANOMALY_THRESHOLD
+        self.contamination = (
+            contamination
+            if contamination is not None
+            else Config.ISOLATION_FOREST_CONTAMINATION
+        )
+        self.weights = weights or DEFAULT_WEIGHTS.copy()
+
+    def detect_batch(self, logs: List[Log]) -> List[Log]:
+        """
+        Execute full hybrid anomaly detection across a collection of logs.
+        Calculates dataset statistics, executes Isolation Forest, computes
+        explainable scores, and generates programmatic reasons.
+        """
+        if not logs:
+            return []
+
+        # Sort logs by timestamp for time-window frequency calculations
+        sorted_logs = sorted(
+            logs,
+            key=lambda x: x.timestamp if x.timestamp else datetime.min
+        )
+
+        n_logs = len(sorted_logs)
+
+        # 1. Event Type & Source Frequency Statistics
+        event_counts = Counter(l.event_type for l in sorted_logs if l.event_type)
+        source_counts = Counter(l.source for l in sorted_logs if l.source)
+        rare_event_threshold = max(1, int(n_logs * 0.03))  # Less than 3% frequency
+
+        # 2. Sliding Window Frequency Analysis (5-minute window)
+        # Calculate event counts per source within a 5-minute rolling window
+        source_window_counts: Dict[int, int] = {}
+        ip_404_counts: Dict[str, int] = defaultdict(int)
+
+        # Track 404s per IP
+        for l in sorted_logs:
+            if l.status_code == 404 and l.ip_address:
+                ip_404_counts[l.ip_address] += 1
+
+        timestamps = [
+            l.timestamp.timestamp() if l.timestamp else 0.0 for l in sorted_logs
+        ]
+
+        # Calculate rolling 5-minute frequency per log
+        for i, log in enumerate(sorted_logs):
+            curr_ts = timestamps[i]
+            window_start = curr_ts - 300  # 300 seconds = 5 minutes
+            
+            # Count logs with same source in [curr_ts - 300, curr_ts]
+            count = 0
+            for j in range(i, -1, -1):
+                if timestamps[j] < window_start:
+                    break
+                if sorted_logs[j].source == log.source:
+                    count += 1
+            source_window_counts[log.id or i] = count
+
+        # 95th percentile threshold for high-frequency bursts
+        freq_values = list(source_window_counts.values())
+        if freq_values and len(freq_values) >= 10:
+            high_freq_threshold = float(np.percentile(freq_values, 95))
+            # Minimum threshold of 5 events in 5 minutes to avoid false positives in tiny datasets
+            high_freq_threshold = max(5.0, high_freq_threshold)
+        else:
+            high_freq_threshold = 5.0
+
+        # 3. Isolation Forest on Log-Derived Features
+        isolation_forest_flags = self._run_isolation_forest(
+            sorted_logs, event_counts, source_counts, source_window_counts
+        )
+
+        # 4. Evaluate Signals & Generate Explainable Scores
+        for idx, log in enumerate(sorted_logs):
+            log_key = log.id or idx
+            signals_triggered: List[Tuple[str, int, str]] = []
+            score = 0
+
+            # Signal 1: HTTP 500+ Error
+            if log.status_code and log.status_code >= 500:
+                pts = self.weights.get("status_500_plus", 40)
+                score += pts
+                signals_triggered.append(
+                    (
+                        "HTTP_5XX_ERROR",
+                        pts,
+                        f"returned HTTP server error {log.status_code}",
+                    )
+                )
+
+            # Signal 2: Suspicious HTTP Status
+            if log.status_code in (401, 403):
+                pts = self.weights.get("status_auth_fail", 15)
+                score += pts
+                signals_triggered.append(
+                    (
+                        "HTTP_AUTH_DENIED",
+                        pts,
+                        f"returned authentication/authorization denial HTTP {log.status_code}",
+                    )
+                )
+            elif log.status_code == 404:
+                # Repeated 404 check
+                ip_count = ip_404_counts.get(log.ip_address or "", 0)
+                if ip_count >= 3:
+                    pts = self.weights.get("status_repeated_404", 20)
+                    score += pts
+                    signals_triggered.append(
+                        (
+                            "REPEATED_404",
+                            pts,
+                            f"part of a repeated 404 pattern ({ip_count} occurrences from IP {log.ip_address})",
+                        )
+                    )
+
+            # Signal 3: Severity Level
+            if log.severity == "CRITICAL":
+                pts = self.weights.get("severity_critical", 30)
+                score += pts
+                signals_triggered.append(
+                    ("CRITICAL_SEVERITY", pts, "has CRITICAL severity level")
+                )
+            elif log.severity == "ERROR":
+                pts = self.weights.get("severity_error", 20)
+                score += pts
+                signals_triggered.append(
+                    ("ERROR_SEVERITY", pts, "has ERROR severity level")
+                )
+
+            # Signal 4: Frequency Anomaly
+            curr_freq = source_window_counts.get(log_key, 1)
+            if curr_freq >= high_freq_threshold:
+                pts = self.weights.get("high_frequency", 20)
+                score += pts
+                signals_triggered.append(
+                    (
+                        "FREQUENCY_BURST",
+                        pts,
+                        f"occurred during an unusually high burst of {curr_freq} events in 5 minutes from '{log.source}'",
+                    )
+                )
+
+            # Signal 5: Rare Event
+            if event_counts.get(log.event_type, 0) <= rare_event_threshold:
+                pts = self.weights.get("rare_event", 15)
+                score += pts
+                signals_triggered.append(
+                    (
+                        "RARE_EVENT",
+                        pts,
+                        f"is an unusual event type '{log.event_type}' (occurring in <=3% of logs)",
+                    )
+                )
+
+            # Signal 6: Isolation Forest Anomaly
+            if isolation_forest_flags.get(log_key, False):
+                pts = self.weights.get("isolation_forest", 30)
+                score += pts
+                signals_triggered.append(
+                    (
+                        "ISOLATION_FOREST",
+                        pts,
+                        "flagged as statistical outlier by Isolation Forest",
+                    )
+                )
+
+            # Cap score between 0 and 100
+            final_score = min(100.0, float(score))
+            is_anomaly = final_score >= self.threshold
+
+            # Programmatic Explainable Reason Generation
+            if is_anomaly and signals_triggered:
+                reasons_text = ", ".join(item[2] for item in signals_triggered)
+                reason_str = (
+                    f"Flagged with anomaly score {final_score:.0f}/100 because the log {reasons_text}."
+                )
+            elif is_anomaly:
+                reason_str = (
+                    f"Flagged with anomaly score {final_score:.0f}/100 exceeding threshold of {self.threshold}."
+                )
+            else:
+                reason_str = f"Normal log activity (score: {final_score:.0f}/100)."
+
+            # Update log model fields
+            log.anomaly = is_anomaly
+            log.anomaly_score = final_score
+            log.anomaly_reason = reason_str
+
+        return sorted_logs
+
+    def _run_isolation_forest(
+        self,
+        logs: List[Log],
+        event_counts: Counter,
+        source_counts: Counter,
+        source_window_counts: Dict[int, int],
+    ) -> Dict[int, bool]:
+        """
+        Train IsolationForest on numerical and engineered log features.
+        Returns a mapping of log_id/index -> is_outlier (bool).
+        """
+        flags: Dict[int, bool] = {}
+        if len(logs) < 10:
+            # Not enough samples for statistical modeling
+            return flags
+
+        try:
+            feature_rows = []
+            log_keys = []
+
+            for idx, l in enumerate(logs):
+                key = l.id or idx
+                log_keys.append(key)
+
+                # Feature 1: Status code (0 if None)
+                status = float(l.status_code) if l.status_code else 0.0
+
+                # Feature 2: Severity score (1-4)
+                sev_score = float(SEVERITY_SCORES.get(l.severity, 1))
+
+                # Feature 3: Rolling window frequency
+                freq = float(source_window_counts.get(key, 1))
+
+                # Feature 4: Overall source frequency
+                src_freq = float(source_counts.get(l.source, 1))
+
+                # Feature 5: Event frequency
+                evt_freq = float(event_counts.get(l.event_type, 1))
+
+                # Feature 6: Timestamp hour
+                hour = float(l.timestamp.hour) if l.timestamp else 12.0
+
+                # Feature 7: Message length
+                msg_len = float(len(l.message)) if l.message else 0.0
+
+                feature_rows.append([
+                    status,
+                    sev_score,
+                    freq,
+                    src_freq,
+                    evt_freq,
+                    hour,
+                    msg_len,
+                ])
+
+            X = np.array(feature_rows, dtype=np.float32)
+
+            # Fit Isolation Forest
+            iso_forest = IsolationForest(
+                contamination=self.contamination,
+                random_state=42,
+                n_estimators=100,
+            )
+            predictions = iso_forest.fit_predict(X)
+
+            # -1 indicates outlier, 1 indicates inlier
+            for key, pred in zip(log_keys, predictions):
+                flags[key] = (pred == -1)
+
+        except Exception:
+            # Fallback gracefully if sklearn encounters issues
+            pass
+
+        return flags
+
+    @classmethod
+    def detect_and_update_all(
+        cls, threshold: Optional[int] = None
+    ) -> Tuple[int, int]:
+        """
+        Query all logs in SQLite database, run anomaly detection, and persist results.
+        Returns: Tuple of (total_logs, anomaly_count).
+        """
+        logs = Log.query.all()
+        if not logs:
+            return 0, 0
+
+        detector = cls(threshold=threshold)
+        detector.detect_batch(logs)
+        db.session.commit()
+
+        anomalies_count = sum(1 for l in logs if l.anomaly)
+        return len(logs), anomalies_count

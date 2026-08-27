@@ -1,0 +1,220 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Smart Log Analyzer & Anomaly Detector{% endblock %}
+
+{% block header_title %}
+<div class="d-flex align-items-center gap-2">
+    <h4 class="mb-0">Monitoring Dashboard</h4>
+    <span class="badge bg-primary-subtle text-primary border border-primary-subtle">Real-Time Overview</span>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <!-- Top KPI Cards Row -->
+    <div class="row g-3 mb-4">
+        <!-- Total Logs Card -->
+        <div class="col-12 col-sm-6 col-xl-2-4 col-lg-4">
+            <div class="card metric-card border-start border-4 border-primary">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <span class="metric-label">TOTAL LOGS</span>
+                            <h2 class="metric-value mb-0" id="metricTotalLogs">--</h2>
+                        </div>
+                        <div class="metric-icon-box bg-primary-subtle text-primary">
+                            <i class="bi bi-file-earmark-text"></i>
+                        </div>
+                    </div>
+                    <div class="metric-meta text-muted mt-2 small">
+                        <span>Ingested records</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Total Anomalies Card -->
+        <div class="col-12 col-sm-6 col-xl-2-4 col-lg-4">
+            <div class="card metric-card border-start border-4 border-danger">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <span class="metric-label">TOTAL ANOMALIES</span>
+                            <h2 class="metric-value mb-0 text-danger" id="metricTotalAnomalies">--</h2>
+                        </div>
+                        <div class="metric-icon-box bg-danger-subtle text-danger">
+                            <i class="bi bi-exclamation-octagon"></i>
+                        </div>
+                    </div>
+                    <div class="metric-meta text-muted mt-2 small">
+                        <span id="metricAnomalyRate">0%</span> anomaly rate
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Critical Anomalies Card -->
+        <div class="col-12 col-sm-6 col-xl-2-4 col-lg-4">
+            <div class="card metric-card border-start border-4 border-dark-danger">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <span class="metric-label">CRITICAL ANOMALIES</span>
+                            <h2 class="metric-value mb-0 text-dark-danger" id="metricCriticalAnomalies">--</h2>
+                        </div>
+                        <div class="metric-icon-box bg-dark-danger-subtle text-dark-danger">
+                            <i class="bi bi-radioactive"></i>
+                        </div>
+                    </div>
+                    <div class="metric-meta text-muted mt-2 small">
+                        <span>Immediate action needed</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Error Rate Card -->
+        <div class="col-12 col-sm-6 col-xl-2-4 col-lg-4">
+            <div class="card metric-card border-start border-4 border-warning">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <span class="metric-label">ERROR RATE</span>
+                            <h2 class="metric-value mb-0 text-warning" id="metricErrorRate">--%</h2>
+                        </div>
+                        <div class="metric-icon-box bg-warning-subtle text-warning">
+                            <i class="bi bi-graph-up-arrow"></i>
+                        </div>
+                    </div>
+                    <div class="metric-meta text-muted mt-2 small">
+                        <span>ERROR + CRITICAL</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- AI Analyses Generated Card -->
+        <div class="col-12 col-sm-6 col-xl-2-4 col-lg-4">
+            <div class="card metric-card border-start border-4 border-success">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <span class="metric-label">AI EXPLANATIONS</span>
+                            <h2 class="metric-value mb-0 text-success" id="metricAiCount">--</h2>
+                        </div>
+                        <div class="metric-icon-box bg-success-subtle text-success">
+                            <i class="bi bi-stars"></i>
+                        </div>
+                    </div>
+                    <div class="metric-meta text-muted mt-2 small">
+                        <span>Gemini root-causes</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row 1: Timeline and Severity -->
+    <div class="row g-3 mb-4">
+        <!-- Main Timeline Chart -->
+        <div class="col-12 col-lg-8">
+            <div class="card chart-card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="mb-0 fw-semibold">
+                            <i class="bi bi-activity text-primary me-2"></i>Log Traffic & Anomaly Timeline
+                        </h6>
+                        <small class="text-muted">Total logs ingested vs. flagged anomalies over time</small>
+                    </div>
+                    <div class="btn-group btn-group-sm">
+                        <button class="btn btn-outline-secondary active" id="btnTimelineRefresh" title="Refresh chart data">
+                            <i class="bi bi-arrow-clockwise"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body position-relative">
+                    <div class="chart-container" style="min-height: 280px;">
+                        <canvas id="timelineChart"></canvas>
+                    </div>
+                    <div class="chart-empty-state d-none" id="timelineEmpty">
+                        <i class="bi bi-bar-chart text-muted display-4"></i>
+                        <p class="text-muted mt-2">No log timeline data available. Please upload a dataset.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Severity Distribution Doughnut Chart -->
+        <div class="col-12 col-lg-4">
+            <div class="card chart-card h-100">
+                <div class="card-header">
+                    <h6 class="mb-0 fw-semibold">
+                        <i class="bi bi-pie-chart text-primary me-2"></i>Logs by Severity
+                    </h6>
+                    <small class="text-muted">Proportion of INFO, WARNING, ERROR, CRITICAL</small>
+                </div>
+                <div class="card-body d-flex flex-column align-items-center justify-content-center">
+                    <div class="chart-container w-100" style="max-height: 240px;">
+                        <canvas id="severityChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row 2 & Recent Anomalies -->
+    <div class="row g-3">
+        <!-- Anomalies by Source Bar Chart -->
+        <div class="col-12 col-lg-6">
+            <div class="card chart-card h-100">
+                <div class="card-header">
+                    <h6 class="mb-0 fw-semibold">
+                        <i class="bi bi-hdd-network text-danger me-2"></i>Anomalies by Service Source
+                    </h6>
+                    <small class="text-muted">Distribution of flagged anomalies across system components</small>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container" style="min-height: 260px;">
+                        <canvas id="sourceChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Anomalies Feed -->
+        <div class="col-12 col-lg-6">
+            <div class="card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="mb-0 fw-semibold">
+                            <i class="bi bi-shield-exclamation text-danger me-2"></i>Recent Flagged Anomalies
+                        </h6>
+                        <small class="text-muted">Highest priority recent detections</small>
+                    </div>
+                    <a href="{{ url_for('logs.logs_view') }}?anomaly_only=true" class="btn btn-sm btn-outline-danger">
+                        View All
+                    </a>
+                </div>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush" id="recentAnomaliesList">
+                        <div class="p-4 text-center text-muted" id="recentAnomaliesEmpty">
+                            <i class="bi bi-check-circle text-success display-6"></i>
+                            <p class="mb-0 mt-2">No anomalies detected yet.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        if (window.LogApp) {
+            window.LogApp.initDashboard();
+        }
+    });
+</script>
+{% endblock %}

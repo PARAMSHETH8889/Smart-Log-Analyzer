@@ -1,0 +1,443 @@
+timestamp,source,event_type,severity,ip_address,status_code,endpoint,message
+2026-08-26 10:11:46,api-server-01,PAYMENT,INFO,172.16.0.5,200,/api/v1/checkout,Payment transaction processed successfully: $68.00 USD
+2026-08-26 10:12:15,auth-server-01,LOGOUT,INFO,198.51.100.4,200,/api/v1/auth/logout,User session terminated gracefully
+2026-08-26 10:12:37,web-server-01,API_REQUEST,INFO,198.51.100.4,204,/api/v1/checkout,GET /api/v1/checkout completed with HTTP 204
+2026-08-26 10:13:09,auth-server-01,LOGOUT,INFO,192.168.1.10,200,/api/v1/auth/logout,User session terminated gracefully
+2026-08-26 10:13:14,api-server-01,DATABASE_QUERY,INFO,192.168.1.42,,,SELECT * FROM sessions WHERE active = 1 (took 41ms)
+2026-08-26 10:13:55,api-server-02,LOGOUT,INFO,10.0.0.28,200,/api/v1/auth/logout,User session terminated gracefully
+2026-08-26 10:14:31,web-server-01,HTTP_REQUEST,INFO,192.168.1.25,200,/api/v1/products,GET /api/v1/products completed with HTTP 200
+2026-08-26 10:14:41,auth-server-01,AUTHENTICATION,INFO,10.0.0.28,200,/api/v1/auth/login,User authentication succeeded for user_684
+2026-08-26 10:15:20,api-server-01,HTTP_REQUEST,INFO,203.0.113.19,200,/metrics,GET /metrics completed with HTTP 200
+2026-08-26 10:15:33,web-server-01,PAYMENT,INFO,10.0.0.15,200,/api/v1/checkout,Payment transaction processed successfully: $228.00 USD
+2026-08-26 10:15:55,auth-server-01,LOGOUT,INFO,192.168.1.10,200,/api/v1/auth/logout,User session terminated gracefully
+2026-08-26 10:16:15,payment-service,DATABASE_QUERY,INFO,172.16.0.5,,,SELECT * FROM users WHERE active = 1 (took 16ms)
+2026-08-26 10:16:54,web-server-01,LOGIN,INFO,172.16.0.88,200,/api/v1/auth/login,User authentication succeeded for user_402
+2026-08-26 10:17:28,database-01,DATABASE_QUERY,INFO,192.168.1.25,,,SELECT * FROM sessions WHERE active = 1 (took 14ms)
+2026-08-26 10:17:52,database-01,DATABASE_QUERY,INFO,198.51.100.4,,,SELECT * FROM transactions WHERE active = 1 (took 23ms)
+2026-08-26 10:18:14,api-server-02,LOGOUT,INFO,172.16.0.5,200,/api/v1/auth/logout,User session terminated gracefully
+2026-08-26 10:18:33,api-server-02,API_REQUEST,INFO,10.0.0.28,201,/api/v1/auth/logout,GET /api/v1/auth/logout completed with HTTP 201
+2026-08-26 10:18:39,auth-server-01,DATABASE_QUERY,INFO,172.16.0.88,,,SELECT * FROM sessions WHERE active = 1 (took 30ms)
+2026-08-26 10:19:18,api-server-01,HTTP_REQUEST,WARNING,198.51.100.4,404,/static/app.js,GET /static/app.js completed with HTTP 404
+2026-08-26 10:19:51,api-server-02,LOGIN,INFO,172.16.0.88,200,/api/v1/auth/login,User authentication succeeded for user_390
+2026-08-26 10:20:07,auth-server-01,FILE_ACCESS,INFO,192.168.1.10,200,/static/assets,Static asset read operation completed: index.css
+2026-08-26 10:20:17,web-server-01,LOGOUT,INFO,172.16.0.88,200,/api/v1/auth/logout,User session terminated gracefully
+2026-08-26 10:21:02,auth-server-01,API_REQUEST,INFO,172.16.0.88,201,/healthz,GET /healthz completed with HTTP 201
+2026-08-26 10:21:44,payment-service,LOGOUT,INFO,172.16.0.88,200,/api/v1/auth/logout,User session terminated gracefully
+2026-08-26 10:22:18,payment-service,FILE_ACCESS,INFO,172.16.0.88,200,/static/assets,Static asset read operation completed: index.css
+2026-08-26 10:22:23,database-01,HTTP_REQUEST,INFO,192.168.1.25,301,/api/v1/orders,GET /api/v1/orders completed with HTTP 301
+2026-08-26 10:22:59,payment-service,LOGOUT,INFO,172.16.0.5,200,/api/v1/auth/logout,User session terminated gracefully
+2026-08-26 10:23:38,api-server-01,DATABASE_QUERY,INFO,192.168.1.25,,,SELECT * FROM users WHERE active = 1 (took 2ms)
+2026-08-26 10:24:07,database-01,AUTHENTICATION,INFO,172.16.0.5,200,/api/v1/auth/login,User authentication succeeded for user_985
+2026-08-26 10:24:24,api-server-01,API_REQUEST,INFO,172.16.0.88,201,/api/v1/orders,GET /api/v1/orders completed with HTTP 201
+2026-08-26 10:25:00,web-server-01,API_REQUEST,INFO,192.168.1.25,200,/healthz,GET /healthz completed with HTTP 200
+2026-08-26 10:25:12,database-01,HTTP_REQUEST,INFO,10.0.0.15,200,/api/v1/checkout,GET /api/v1/checkout completed with HTTP 200
+2026-08-26 10:25:26,api-server-01,LOGIN,INFO,172.16.0.88,200,/api/v1/auth/login,User authentication succeeded for user_729
+2026-08-26 10:25:53,web-server-01,DATABASE_QUERY,INFO,198.51.100.4,,,SELECT * FROM transactions WHERE active = 1 (took 37ms)
+2026-08-26 10:26:24,api-server-01,DATABASE_QUERY,INFO,192.168.1.25,,,SELECT * FROM orders WHERE active = 1 (took 41ms)
+2026-08-26 10:26:48,api-server-01,LOGOUT,INFO,10.0.0.28,200,/api/v1/auth/logout,User session terminated gracefully
+2026-08-26 10:27:02,database-01,PAYMENT,INFO,192.168.1.25,200,/api/v1/checkout,Payment transaction processed successfully: $89.00 USD
+2026-08-26 10:27:10,payment-service,HTTP_REQUEST,INFO,203.0.113.19,200,/api/v1/orders,GET /api/v1/orders completed with HTTP 200
+2026-08-26 10:27:51,database-01,HTTP_REQUEST,INFO,203.0.113.19,200,/metrics,GET /metrics completed with HTTP 200
+2026-08-26 10:28:10,web-server-01,LOGOUT,INFO,203.0.113.19,200,/api/v1/auth/logout,User session terminated gracefully
+2026-08-26 10:28:15,database-01,PAYMENT,INFO,10.0.0.15,200,/api/v1/checkout,Payment transaction processed successfully: $96.00 USD
+2026-08-26 10:28:45,auth-server-01,FILE_ACCESS,INFO,192.168.1.10,200,/static/assets,Static asset read operation completed: index.css
+2026-08-26 10:29:12,auth-server-01,AUTHENTICATION,INFO,192.168.1.25,200,/api/v1/auth/login,User authentication succeeded for user_645
+2026-08-26 10:29:19,web-server-01,FILE_ACCESS,INFO,203.0.113.19,200,/static/assets,Static asset read operation completed: index.css
+2026-08-26 10:29:58,web-server-01,API_REQUEST,INFO,198.51.100.4,301,/api/v1/checkout,GET /api/v1/checkout completed with HTTP 301
+2026-08-26 10:30:04,api-server-01,DATABASE_QUERY,INFO,192.168.1.25,,,SELECT * FROM orders WHERE active = 1 (took 22ms)
+2026-08-26 10:30:32,web-server-01,LOGOUT,INFO,198.51.100.4,200,/api/v1/auth/logout,User session terminated gracefully
+2026-08-26 10:31:04,payment-service,LOGIN,INFO,172.16.0.5,200,/api/v1/auth/login,User authentication succeeded for user_199
+2026-08-26 10:31:34,api-server-02,LOGOUT,INFO,192.168.1.42,200,/api/v1/auth/logout,User session terminated gracefully
+2026-08-26 10:32:11,web-server-01,FILE_ACCESS,INFO,172.16.0.5,200,/static/assets,Static asset read operation completed: index.css
+2026-08-26 10:32:50,auth-server-01,HTTP_REQUEST,INFO,198.51.100.4,200,/api/v1/inventory,GET /api/v1/inventory completed with HTTP 200
+2026-08-26 10:33:28,database-01,HTTP_REQUEST,INFO,172.16.0.5,200,/api/v1/products,GET /api/v1/products completed with HTTP 200
+2026-08-26 10:34:05,database-01,LOGOUT,INFO,172.16.0.5,200,/api/v1/auth/logout,User session terminated gracefully
+2026-08-26 10:34:17,web-server-01,PAYMENT,INFO,10.0.0.28,200,/api/v1/checkout,Payment transaction processed successfully: $101.00 USD
+2026-08-26 10:34:30,database-01,API_REQUEST,INFO,10.0.0.28,200,/api/v1/users,GET /api/v1/users completed with HTTP 200
+2026-08-26 10:34:52,auth-server-01,PAYMENT,INFO,198.51.100.4,200,/api/v1/checkout,Payment transaction processed successfully: $249.00 USD
+2026-08-26 10:34:57,database-01,FILE_ACCESS,INFO,172.16.0.88,200,/static/assets,Static asset read operation completed: index.css
+2026-08-26 10:35:06,api-server-01,DATABASE_QUERY,INFO,192.168.1.10,,,SELECT * FROM transactions WHERE active = 1 (took 2ms)
+2026-08-26 10:35:28,api-server-02,LOGIN,INFO,172.16.0.5,200,/api/v1/auth/login,User authentication succeeded for user_869
+2026-08-26 10:35:36,payment-service,DATABASE_QUERY,INFO,10.0.0.28,,,SELECT * FROM orders WHERE active = 1 (took 12ms)
+2026-08-26 10:35:59,auth-server-01,AUTHENTICATION,INFO,172.16.0.5,200,/api/v1/auth/login,User authentication succeeded for user_426
+2026-08-26 10:36:37,web-server-01,HTTP_REQUEST,INFO,172.16.0.88,200,/metrics,GET /metrics completed with HTTP 200
+2026-08-26 10:36:43,auth-server-01,LOGOUT,INFO,192.168.1.25,200,/api/v1/auth/logout,User session terminated gracefully
+2026-08-26 10:37:03,api-server-01,API_REQUEST,INFO,10.0.0.28,200,/api/v1/auth/login,GET /api/v1/auth/login completed with HTTP 200
+2026-08-26 10:37:34,database-01,API_REQUEST,INFO,10.0.0.15,204,/healthz,GET /healthz completed with HTTP 204
+2026-08-26 10:37:59,api-server-01,LOGOUT,INFO,172.16.0.5,200,/api/v1/auth/logout,User session terminated gracefully
+2026-08-26 10:38:27,web-server-01,HTTP_REQUEST,INFO,198.51.100.4,200,/api/v1/auth/login,GET /api/v1/auth/login completed with HTTP 200
+2026-08-26 10:38:40,web-server-01,LOGIN,INFO,198.51.100.4,200,/api/v1/auth/login,User authentication succeeded for user_267
+2026-08-26 10:39:21,payment-service,LOGIN,INFO,172.16.0.88,200,/api/v1/auth/login,User authentication succeeded for user_524
+2026-08-26 10:39:54,api-server-01,LOGIN,INFO,172.16.0.5,200,/api/v1/auth/login,User authentication succeeded for user_754
+2026-08-26 10:40:23,api-server-01,FILE_ACCESS,INFO,10.0.0.28,200,/static/assets,Static asset read operation completed: index.css
+2026-08-26 10:40:43,api-server-01,HTTP_REQUEST,INFO,10.0.0.15,201,/api/v1/checkout,GET /api/v1/checkout completed with HTTP 201
+2026-08-26 10:41:17,auth-server-01,LOGOUT,INFO,172.16.0.5,200,/api/v1/auth/logout,User session terminated gracefully
+2026-08-26 10:41:53,database-01,AUTHENTICATION,INFO,10.0.0.15,200,/api/v1/auth/login,User authentication succeeded for user_269
+2026-08-26 10:42:11,api-server-01,API_REQUEST,INFO,192.168.1.25,200,/api/v1/auth/logout,GET /api/v1/auth/logout completed with HTTP 200
+2026-08-26 10:42:29,payment-service,API_REQUEST,INFO,10.0.0.28,201,/healthz,GET /healthz completed with HTTP 201
+2026-08-26 10:43:01,web-server-01,API_REQUEST,INFO,203.0.113.19,200,/metrics,GET /metrics completed with HTTP 200
+2026-08-26 10:43:35,api-server-02,HTTP_REQUEST,INFO,172.16.0.88,200,/healthz,GET /healthz completed with HTTP 200
+2026-08-26 10:44:16,api-server-01,DATABASE_QUERY,INFO,203.0.113.19,,,SELECT * FROM orders WHERE active = 1 (took 17ms)
+2026-08-26 10:44:29,web-server-01,HTTP_REQUEST,INFO,10.0.0.28,200,/api/v1/inventory,GET /api/v1/inventory completed with HTTP 200
+2026-08-26 10:44:40,payment-service,LOGOUT,INFO,192.168.1.10,200,/api/v1/auth/logout,User session terminated gracefully
+2026-08-26 10:45:04,api-server-01,DATABASE_QUERY,INFO,203.0.113.19,,,SELECT * FROM users WHERE active = 1 (took 5ms)
+2026-08-26 10:45:49,database-01,HTTP_REQUEST,INFO,192.168.1.42,200,/api/v1/users,GET /api/v1/users completed with HTTP 200
+2026-08-26 10:46:05,auth-server-01,LOGOUT,INFO,172.16.0.5,200,/api/v1/auth/logout,User session terminated gracefully
+2026-08-26 10:46:16,api-server-01,API_REQUEST,INFO,10.0.0.28,201,/api/v1/users,GET /api/v1/users completed with HTTP 201
+2026-08-26 10:46:38,database-01,API_REQUEST,INFO,192.168.1.42,201,/api/v1/inventory,GET /api/v1/inventory completed with HTTP 201
+2026-08-26 10:47:11,auth-server-01,AUTHENTICATION,INFO,192.168.1.25,200,/api/v1/auth/login,User authentication succeeded for user_167
+2026-08-26 10:47:19,api-server-01,LOGIN,INFO,10.0.0.15,200,/api/v1/auth/login,User authentication succeeded for user_909
+2026-08-26 10:47:53,payment-service,DATABASE_QUERY,INFO,10.0.0.28,,,SELECT * FROM transactions WHERE active = 1 (took 2ms)
+2026-08-26 10:48:29,database-01,LOGIN,INFO,10.0.0.15,200,/api/v1/auth/login,User authentication succeeded for user_494
+2026-08-26 10:48:45,web-server-01,LOGOUT,INFO,10.0.0.28,200,/api/v1/auth/logout,User session terminated gracefully
+2026-08-26 10:49:17,api-server-02,PAYMENT,INFO,172.16.0.88,200,/api/v1/checkout,Payment transaction processed successfully: $157.00 USD
+2026-08-26 10:49:30,api-server-01,API_REQUEST,INFO,10.0.0.28,200,/static/app.js,GET /static/app.js completed with HTTP 200
+2026-08-26 10:49:53,api-server-02,LOGIN,INFO,192.168.1.10,200,/api/v1/auth/login,User authentication succeeded for user_537
+2026-08-26 10:50:37,api-server-01,AUTHENTICATION,INFO,203.0.113.19,200,/api/v1/auth/login,User authentication succeeded for user_453
+2026-08-26 10:50:56,api-server-02,FILE_ACCESS,INFO,192.168.1.10,200,/static/assets,Static asset read operation completed: index.css
+2026-08-26 10:51:09,database-01,API_REQUEST,INFO,192.168.1.10,200,/api/v1/inventory,GET /api/v1/inventory completed with HTTP 200
+2026-08-26 10:51:27,payment-service,HTTP_REQUEST,INFO,10.0.0.15,200,/static/app.js,GET /static/app.js completed with HTTP 200
+2026-08-26 10:52:06,api-server-01,DATABASE_QUERY,INFO,192.168.1.42,,,SELECT * FROM sessions WHERE active = 1 (took 12ms)
+2026-08-26 10:52:51,auth-server-01,FILE_ACCESS,INFO,192.168.1.10,200,/static/assets,Static asset read operation completed: index.css
+2026-08-26 10:53:02,api-server-01,API_REQUEST,INFO,203.0.113.19,200,/api/v1/checkout,GET /api/v1/checkout completed with HTTP 200
+2026-08-26 10:53:13,payment-service,LOGIN,INFO,172.16.0.88,200,/api/v1/auth/login,User authentication succeeded for user_272
+2026-08-26 10:53:21,api-server-01,LOGOUT,INFO,192.168.1.10,200,/api/v1/auth/logout,User session terminated gracefully
+2026-08-26 10:53:45,auth-server-01,LOGIN,WARNING,198.51.100.4,401,/api/v1/auth/login,User authentication invalid password for user_198
+2026-08-26 10:54:05,auth-server-01,AUTHENTICATION,INFO,192.168.1.25,200,/api/v1/auth/login,User authentication succeeded for user_570
+2026-08-26 10:54:11,auth-server-01,FILE_ACCESS,INFO,10.0.0.15,200,/static/assets,Static asset read operation completed: index.css
+2026-08-26 10:54:50,auth-server-01,DATABASE_QUERY,INFO,192.168.1.42,,,SELECT * FROM orders WHERE active = 1 (took 45ms)
+2026-08-26 10:54:55,api-server-01,FILE_ACCESS,INFO,172.16.0.88,200,/static/assets,Static asset read operation completed: index.css
+2026-08-26 10:55:34,web-server-01,DATABASE_QUERY,INFO,198.51.100.4,,,SELECT * FROM orders WHERE active = 1 (took 26ms)
+2026-08-26 10:56:01,auth-server-01,PAYMENT,INFO,10.0.0.15,200,/api/v1/checkout,Payment transaction processed successfully: $231.00 USD
+2026-08-26 10:56:19,payment-service,HTTP_REQUEST,INFO,192.168.1.10,200,/api/v1/auth/logout,GET /api/v1/auth/logout completed with HTTP 200
+2026-08-26 10:56:29,api-server-02,AUTHENTICATION,INFO,198.51.100.4,200,/api/v1/auth/login,User authentication succeeded for user_492
+2026-08-26 10:56:36,payment-service,PAYMENT,INFO,192.168.1.10,200,/api/v1/checkout,Payment transaction processed successfully: $132.00 USD
+2026-08-26 10:56:45,payment-service,LOGIN,INFO,10.0.0.28,200,/api/v1/auth/login,User authentication succeeded for user_871
+2026-08-26 10:57:08,api-server-01,HTTP_REQUEST,INFO,192.168.1.42,200,/api/v1/auth/login,GET /api/v1/auth/login completed with HTTP 200
+2026-08-26 10:57:43,web-server-01,API_REQUEST,INFO,198.51.100.4,200,/static/app.js,GET /static/app.js completed with HTTP 200
+2026-08-26 10:57:58,database-01,DATABASE_QUERY,INFO,192.168.1.25,,,SELECT * FROM sessions WHERE active = 1 (took 12ms)
+2026-08-26 10:58:28,payment-service,HTTP_REQUEST,INFO,203.0.113.19,200,/api/v1/auth/logout,GET /api/v1/auth/logout completed with HTTP 200
+2026-08-26 10:58:42,api-server-01,LOGIN,INFO,172.16.0.5,200,/api/v1/auth/login,User authentication succeeded for user_265
+2026-08-26 10:58:47,database-01,LOGIN,INFO,172.16.0.5,200,/api/v1/auth/login,User authentication succeeded for user_677
+2026-08-26 10:59:30,auth-server-01,LOGOUT,INFO,172.16.0.88,200,/api/v1/auth/logout,User session terminated gracefully
+2026-08-26 10:59:35,api-server-02,DATABASE_QUERY,INFO,172.16.0.88,,,SELECT * FROM sessions WHERE active = 1 (took 41ms)
+2026-08-26 11:00:18,payment-service,LOGOUT,INFO,172.16.0.5,200,/api/v1/auth/logout,User session terminated gracefully
+2026-08-26 11:00:28,api-server-01,API_REQUEST,INFO,192.168.1.10,201,/api/v1/auth/login,GET /api/v1/auth/login completed with HTTP 201
+2026-08-26 11:01:10,api-server-01,LOGIN,INFO,172.16.0.88,200,/api/v1/auth/login,User authentication succeeded for user_916
+2026-08-26 11:01:26,web-server-01,HTTP_REQUEST,INFO,172.16.0.5,200,/api/v1/auth/logout,GET /api/v1/auth/logout completed with HTTP 200
+2026-08-26 11:01:41,auth-server-01,API_REQUEST,WARNING,192.168.1.25,404,/metrics,GET /metrics completed with HTTP 404
+2026-08-26 11:02:07,auth-server-01,AUTHENTICATION,INFO,172.16.0.5,200,/api/v1/auth/login,User authentication succeeded for user_660
+2026-08-26 11:02:21,database-01,DATABASE_QUERY,INFO,192.168.1.42,,,SELECT * FROM transactions WHERE active = 1 (took 14ms)
+2026-08-26 11:02:51,auth-server-01,DATABASE_QUERY,INFO,10.0.0.28,,,SELECT * FROM sessions WHERE active = 1 (took 27ms)
+2026-08-26 11:03:30,payment-service,DATABASE_QUERY,INFO,172.16.0.88,,,SELECT * FROM orders WHERE active = 1 (took 24ms)
+2026-08-26 11:04:11,auth-server-01,LOGOUT,INFO,172.16.0.88,200,/api/v1/auth/logout,User session terminated gracefully
+2026-08-26 11:04:27,payment-service,FILE_ACCESS,INFO,172.16.0.88,200,/static/assets,Static asset read operation completed: index.css
+2026-08-26 11:04:44,web-server-01,API_REQUEST,INFO,10.0.0.28,200,/api/v1/auth/login,GET /api/v1/auth/login completed with HTTP 200
+2026-08-26 11:05:12,api-server-02,AUTHENTICATION,INFO,10.0.0.28,200,/api/v1/auth/login,User authentication succeeded for user_637
+2026-08-26 11:05:49,auth-server-01,LOGOUT,INFO,172.16.0.5,200,/api/v1/auth/logout,User session terminated gracefully
+2026-08-26 11:06:08,api-server-01,PAYMENT,INFO,203.0.113.19,200,/api/v1/checkout,Payment transaction processed successfully: $145.00 USD
+2026-08-26 11:06:27,payment-service,API_REQUEST,INFO,10.0.0.28,204,/healthz,GET /healthz completed with HTTP 204
+2026-08-26 11:06:51,api-server-02,PAYMENT,INFO,192.168.1.25,200,/api/v1/checkout,Payment transaction processed successfully: $109.00 USD
+2026-08-26 11:07:02,database-01,PAYMENT,INFO,192.168.1.10,200,/api/v1/checkout,Payment transaction processed successfully: $248.00 USD
+2026-08-26 11:07:11,auth-server-01,DATABASE_QUERY,INFO,10.0.0.15,,,SELECT * FROM users WHERE active = 1 (took 40ms)
+2026-08-26 11:07:52,payment-service,API_REQUEST,WARNING,192.168.1.10,404,/api/v1/orders,GET /api/v1/orders completed with HTTP 404
+2026-08-26 11:08:02,auth-server-01,AUTHENTICATION,INFO,10.0.0.15,200,/api/v1/auth/login,User authentication succeeded for user_253
+2026-08-26 11:08:35,auth-server-01,FILE_ACCESS,INFO,10.0.0.15,200,/static/assets,Static asset read operation completed: index.css
+2026-08-26 11:08:40,database-01,AUTHENTICATION,INFO,198.51.100.4,200,/api/v1/auth/login,User authentication succeeded for user_429
+2026-08-26 11:09:16,web-server-01,HTTP_REQUEST,INFO,10.0.0.28,200,/healthz,GET /healthz completed with HTTP 200
+2026-08-26 11:09:33,payment-service,PAYMENT,INFO,172.16.0.88,200,/api/v1/checkout,Payment transaction processed successfully: $200.00 USD
+2026-08-26 11:10:05,payment-service,AUTHENTICATION,INFO,10.0.0.28,200,/api/v1/auth/login,User authentication succeeded for user_994
+2026-08-26 11:10:13,database-01,HTTP_REQUEST,INFO,192.168.1.10,201,/static/app.js,GET /static/app.js completed with HTTP 201
+2026-08-26 11:10:26,web-server-01,LOGOUT,INFO,192.168.1.25,200,/api/v1/auth/logout,User session terminated gracefully
+2026-08-26 11:10:48,payment-service,PAYMENT,INFO,198.51.100.4,200,/api/v1/checkout,Payment transaction processed successfully: $52.00 USD
+2026-08-26 11:11:26,payment-service,API_REQUEST,INFO,172.16.0.5,200,/api/v1/auth/login,GET /api/v1/auth/login completed with HTTP 200
+2026-08-26 11:12:08,web-server-01,FILE_ACCESS,INFO,192.168.1.25,200,/static/assets,Static asset read operation completed: index.css
+2026-08-26 11:12:22,database-01,API_REQUEST,INFO,10.0.0.15,200,/api/v1/checkout,GET /api/v1/checkout completed with HTTP 200
+2026-08-26 11:12:53,api-server-01,FILE_ACCESS,INFO,172.16.0.5,200,/static/assets,Static asset read operation completed: index.css
+2026-08-26 11:12:59,payment-service,PAYMENT,INFO,10.0.0.15,200,/api/v1/checkout,Payment transaction processed successfully: $220.00 USD
+2026-08-26 11:13:22,api-server-02,HTTP_REQUEST,INFO,192.168.1.10,200,/api/v1/checkout,GET /api/v1/checkout completed with HTTP 200
+2026-08-26 11:13:54,api-server-01,HTTP_REQUEST,INFO,10.0.0.15,200,/api/v1/orders,GET /api/v1/orders completed with HTTP 200
+2026-08-26 11:14:17,api-server-01,FILE_ACCESS,INFO,192.168.1.10,200,/static/assets,Static asset read operation completed: index.css
+2026-08-26 11:14:35,api-server-01,PAYMENT,INFO,203.0.113.19,200,/api/v1/checkout,Payment transaction processed successfully: $182.00 USD
+2026-08-26 11:15:18,database-01,API_REQUEST,INFO,192.168.1.10,204,/api/v1/auth/login,GET /api/v1/auth/login completed with HTTP 204
+2026-08-26 11:16:02,api-server-01,LOGIN,INFO,10.0.0.28,200,/api/v1/auth/login,User authentication succeeded for user_290
+2026-08-26 11:16:38,payment-service,DATABASE_QUERY,INFO,172.16.0.88,,,SELECT * FROM users WHERE active = 1 (took 10ms)
+2026-08-26 11:17:19,web-server-01,HTTP_REQUEST,INFO,192.168.1.25,200,/api/v1/users,GET /api/v1/users completed with HTTP 200
+2026-08-26 11:17:40,web-server-01,PAYMENT,INFO,198.51.100.4,200,/api/v1/checkout,Payment transaction processed successfully: $72.00 USD
+2026-08-26 11:17:58,database-01,PAYMENT,INFO,203.0.113.19,200,/api/v1/checkout,Payment transaction processed successfully: $32.00 USD
+2026-08-26 11:18:11,database-01,PAYMENT,INFO,10.0.0.28,200,/api/v1/checkout,Payment transaction processed successfully: $36.00 USD
+2026-08-26 11:18:56,database-01,API_REQUEST,INFO,172.16.0.5,204,/api/v1/orders,GET /api/v1/orders completed with HTTP 204
+2026-08-26 11:19:25,web-server-01,HTTP_REQUEST,INFO,192.168.1.25,200,/api/v1/auth/logout,GET /api/v1/auth/logout completed with HTTP 200
+2026-08-26 11:20:04,auth-server-01,DATABASE_QUERY,INFO,192.168.1.25,,,SELECT * FROM transactions WHERE active = 1 (took 24ms)
+2026-08-26 11:20:28,payment-service,LOGIN,INFO,192.168.1.25,200,/api/v1/auth/login,User authentication succeeded for user_777
+2026-08-26 11:21:03,api-server-01,HTTP_REQUEST,INFO,172.16.0.5,200,/api/v1/products,GET /api/v1/products completed with HTTP 200
+2026-08-26 11:21:10,web-server-01,FILE_ACCESS,INFO,172.16.0.5,200,/static/assets,Static asset read operation completed: index.css
+2026-08-26 11:21:33,api-server-01,DATABASE_QUERY,INFO,192.168.1.10,,,SELECT * FROM sessions WHERE active = 1 (took 36ms)
+2026-08-26 11:22:17,auth-server-01,PAYMENT,INFO,192.168.1.25,200,/api/v1/checkout,Payment transaction processed successfully: $16.00 USD
+2026-08-26 11:22:52,api-server-02,FILE_ACCESS,INFO,10.0.0.28,200,/static/assets,Static asset read operation completed: index.css
+2026-08-26 11:23:16,api-server-02,FILE_ACCESS,INFO,203.0.113.19,200,/static/assets,Static asset read operation completed: index.css
+2026-08-26 11:23:42,auth-server-01,HTTP_REQUEST,INFO,203.0.113.19,200,/api/v1/inventory,GET /api/v1/inventory completed with HTTP 200
+2026-08-26 11:23:48,payment-service,HTTP_REQUEST,INFO,172.16.0.88,200,/api/v1/users,GET /api/v1/users completed with HTTP 200
+2026-08-26 11:24:29,payment-service,AUTHENTICATION,INFO,172.16.0.5,200,/api/v1/auth/login,User authentication succeeded for user_413
+2026-08-26 11:24:40,api-server-01,AUTHENTICATION,INFO,192.168.1.25,200,/api/v1/auth/login,User authentication succeeded for user_432
+2026-08-26 11:25:04,api-server-01,LOGIN,INFO,172.16.0.88,200,/api/v1/auth/login,User authentication succeeded for user_993
+2026-08-26 11:25:23,api-server-02,LOGOUT,INFO,172.16.0.88,200,/api/v1/auth/logout,User session terminated gracefully
+2026-08-26 11:25:50,api-server-01,DATABASE_QUERY,INFO,172.16.0.88,,,SELECT * FROM users WHERE active = 1 (took 17ms)
+2026-08-26 11:26:29,api-server-01,LOGOUT,INFO,192.168.1.25,200,/api/v1/auth/logout,User session terminated gracefully
+2026-08-26 11:26:57,payment-service,LOGIN,INFO,172.16.0.5,200,/api/v1/auth/login,User authentication succeeded for user_172
+2026-08-26 11:27:25,payment-service,AUTHENTICATION,INFO,172.16.0.88,200,/api/v1/auth/login,User authentication succeeded for user_146
+2026-08-26 11:27:34,api-server-02,LOGOUT,INFO,203.0.113.19,200,/api/v1/auth/logout,User session terminated gracefully
+2026-08-26 11:27:39,web-server-01,LOGOUT,INFO,192.168.1.25,200,/api/v1/auth/logout,User session terminated gracefully
+2026-08-26 11:28:03,web-server-01,LOGIN,INFO,10.0.0.28,200,/api/v1/auth/login,User authentication succeeded for user_516
+2026-08-26 11:28:35,auth-server-01,PAYMENT,INFO,198.51.100.4,200,/api/v1/checkout,Payment transaction processed successfully: $131.00 USD
+2026-08-26 11:29:08,database-01,HTTP_REQUEST,INFO,172.16.0.5,200,/api/v1/checkout,GET /api/v1/checkout completed with HTTP 200
+2026-08-26 11:29:45,database-01,DATABASE_QUERY,INFO,198.51.100.4,,,SELECT * FROM orders WHERE active = 1 (took 19ms)
+2026-08-26 11:30:03,database-01,LOGOUT,INFO,203.0.113.19,200,/api/v1/auth/logout,User session terminated gracefully
+2026-08-26 11:30:17,api-server-02,HTTP_REQUEST,INFO,10.0.0.15,204,/metrics,GET /metrics completed with HTTP 204
+2026-08-26 11:30:53,web-server-01,HTTP_REQUEST,INFO,192.168.1.42,200,/api/v1/auth/login,GET /api/v1/auth/login completed with HTTP 200
+2026-08-26 11:31:36,api-server-01,LOGIN,INFO,10.0.0.28,200,/api/v1/auth/login,User authentication succeeded for user_145
+2026-08-26 11:32:16,api-server-01,DATABASE_QUERY,INFO,192.168.1.42,,,SELECT * FROM transactions WHERE active = 1 (took 18ms)
+2026-08-26 11:33:01,web-server-01,PAYMENT,INFO,198.51.100.4,200,/api/v1/checkout,Payment transaction processed successfully: $42.00 USD
+2026-08-26 11:33:28,api-server-02,DATABASE_QUERY,INFO,10.0.0.15,,,SELECT * FROM users WHERE active = 1 (took 15ms)
+2026-08-26 11:33:39,api-server-02,FILE_ACCESS,INFO,192.168.1.42,200,/static/assets,Static asset read operation completed: index.css
+2026-08-26 11:33:49,api-server-02,FILE_ACCESS,INFO,172.16.0.88,200,/static/assets,Static asset read operation completed: index.css
+2026-08-26 11:34:28,api-server-01,DATABASE_QUERY,INFO,198.51.100.4,,,SELECT * FROM orders WHERE active = 1 (took 35ms)
+2026-08-26 11:34:56,api-server-02,DATABASE_QUERY,INFO,10.0.0.28,,,SELECT * FROM orders WHERE active = 1 (took 42ms)
+2026-08-26 11:35:10,payment-service,DATABASE_QUERY,INFO,192.168.1.10,,,SELECT * FROM users WHERE active = 1 (took 22ms)
+2026-08-26 11:35:24,database-01,FILE_ACCESS,INFO,198.51.100.4,200,/static/assets,Static asset read operation completed: index.css
+2026-08-26 11:35:30,web-server-01,AUTHENTICATION,WARNING,198.51.100.4,401,/api/v1/auth/login,User authentication invalid password for user_218
+2026-08-26 11:36:11,database-01,LOGOUT,INFO,10.0.0.28,200,/api/v1/auth/logout,User session terminated gracefully
+2026-08-26 11:36:33,api-server-02,LOGIN,INFO,192.168.1.42,200,/api/v1/auth/login,User authentication succeeded for user_157
+2026-08-26 11:36:46,payment-service,LOGOUT,INFO,10.0.0.28,200,/api/v1/auth/logout,User session terminated gracefully
+2026-08-26 11:36:56,api-server-01,PAYMENT,INFO,192.168.1.42,200,/api/v1/checkout,Payment transaction processed successfully: $71.00 USD
+2026-08-26 11:37:30,api-server-02,DATABASE_QUERY,INFO,172.16.0.5,,,SELECT * FROM sessions WHERE active = 1 (took 29ms)
+2026-08-26 11:37:53,web-server-01,FILE_ACCESS,INFO,10.0.0.15,200,/static/assets,Static asset read operation completed: index.css
+2026-08-26 11:38:13,auth-server-01,HTTP_REQUEST,INFO,10.0.0.28,200,/api/v1/checkout,GET /api/v1/checkout completed with HTTP 200
+2026-08-26 11:38:44,database-01,LOGIN,INFO,192.168.1.10,200,/api/v1/auth/login,User authentication succeeded for user_282
+2026-08-26 11:39:22,database-01,AUTHENTICATION,INFO,198.51.100.4,200,/api/v1/auth/login,User authentication succeeded for user_629
+2026-08-26 11:39:41,database-01,PAYMENT,INFO,172.16.0.88,200,/api/v1/checkout,Payment transaction processed successfully: $86.00 USD
+2026-08-26 11:40:14,web-server-01,API_REQUEST,INFO,192.168.1.10,200,/api/v1/products,GET /api/v1/products completed with HTTP 200
+2026-08-26 11:40:45,api-server-01,AUTHENTICATION,INFO,192.168.1.10,200,/api/v1/auth/login,User authentication succeeded for user_755
+2026-08-26 11:41:17,api-server-01,AUTHENTICATION,INFO,198.51.100.4,200,/api/v1/auth/login,User authentication succeeded for user_250
+2026-08-26 11:41:28,api-server-01,DATABASE_QUERY,INFO,10.0.0.28,,,SELECT * FROM transactions WHERE active = 1 (took 25ms)
+2026-08-26 11:41:40,payment-service,FILE_ACCESS,INFO,10.0.0.28,200,/static/assets,Static asset read operation completed: index.css
+2026-08-26 11:42:08,api-server-01,API_REQUEST,INFO,172.16.0.88,200,/metrics,GET /metrics completed with HTTP 200
+2026-08-26 11:42:15,api-server-02,DATABASE_QUERY,INFO,172.16.0.5,,,SELECT * FROM transactions WHERE active = 1 (took 9ms)
+2026-08-26 11:42:25,auth-server-01,API_REQUEST,INFO,10.0.0.28,200,/api/v1/users,GET /api/v1/users completed with HTTP 200
+2026-08-26 11:42:56,api-server-02,HTTP_REQUEST,INFO,192.168.1.10,200,/metrics,GET /metrics completed with HTTP 200
+2026-08-26 11:43:20,payment-service,LOGOUT,INFO,172.16.0.5,200,/api/v1/auth/logout,User session terminated gracefully
+2026-08-26 11:43:58,web-server-01,HTTP_REQUEST,INFO,10.0.0.15,200,/api/v1/auth/logout,GET /api/v1/auth/logout completed with HTTP 200
+2026-08-26 11:44:22,auth-server-01,AUTHENTICATION,INFO,192.168.1.42,200,/api/v1/auth/login,User authentication succeeded for user_936
+2026-08-26 11:45:04,database-01,AUTHENTICATION,INFO,203.0.113.19,200,/api/v1/auth/login,User authentication succeeded for user_706
+2026-08-26 11:45:37,database-01,LOGIN,INFO,172.16.0.5,200,/api/v1/auth/login,User authentication succeeded for user_324
+2026-08-26 11:46:16,database-01,API_REQUEST,INFO,172.16.0.88,200,/api/v1/checkout,GET /api/v1/checkout completed with HTTP 200
+2026-08-26 11:46:27,payment-service,API_REQUEST,INFO,10.0.0.15,301,/api/v1/orders,GET /api/v1/orders completed with HTTP 301
+2026-08-26 11:47:11,database-01,PAYMENT,INFO,172.16.0.5,200,/api/v1/checkout,Payment transaction processed successfully: $215.00 USD
+2026-08-26 11:47:25,database-01,PAYMENT,INFO,203.0.113.19,200,/api/v1/checkout,Payment transaction processed successfully: $154.00 USD
+2026-08-26 11:47:55,api-server-01,LOGIN,INFO,192.168.1.25,200,/api/v1/auth/login,User authentication succeeded for user_610
+2026-08-26 11:48:22,database-01,API_REQUEST,INFO,203.0.113.19,301,/api/v1/auth/logout,GET /api/v1/auth/logout completed with HTTP 301
+2026-08-26 11:48:45,api-server-01,FILE_ACCESS,INFO,10.0.0.15,200,/static/assets,Static asset read operation completed: index.css
+2026-08-26 11:49:22,payment-service,HTTP_REQUEST,INFO,172.16.0.5,200,/healthz,GET /healthz completed with HTTP 200
+2026-08-26 11:49:31,web-server-01,FILE_ACCESS,INFO,10.0.0.15,200,/static/assets,Static asset read operation completed: index.css
+2026-08-26 11:49:44,api-server-02,AUTHENTICATION,INFO,192.168.1.25,200,/api/v1/auth/login,User authentication succeeded for user_103
+2026-08-26 11:50:18,payment-service,DATABASE_QUERY,INFO,198.51.100.4,,,SELECT * FROM transactions WHERE active = 1 (took 24ms)
+2026-08-26 11:50:39,database-01,PAYMENT,INFO,10.0.0.28,200,/api/v1/checkout,Payment transaction processed successfully: $125.00 USD
+2026-08-26 11:51:08,api-server-02,LOGOUT,INFO,203.0.113.19,200,/api/v1/auth/logout,User session terminated gracefully
+2026-08-26 11:51:26,api-server-02,PAYMENT,INFO,203.0.113.19,200,/api/v1/checkout,Payment transaction processed successfully: $209.00 USD
+2026-08-26 11:51:34,database-01,LOGOUT,INFO,10.0.0.15,200,/api/v1/auth/logout,User session terminated gracefully
+2026-08-26 11:52:00,auth-server-01,PAYMENT,INFO,198.51.100.4,200,/api/v1/checkout,Payment transaction processed successfully: $71.00 USD
+2026-08-26 11:52:23,payment-service,FILE_ACCESS,INFO,172.16.0.5,200,/static/assets,Static asset read operation completed: index.css
+2026-08-26 11:52:28,database-01,LOGOUT,INFO,192.168.1.25,200,/api/v1/auth/logout,User session terminated gracefully
+2026-08-26 11:52:33,api-server-01,LOGOUT,INFO,192.168.1.10,200,/api/v1/auth/logout,User session terminated gracefully
+2026-08-26 11:53:09,database-01,HTTP_REQUEST,WARNING,10.0.0.15,404,/api/v1/auth/logout,GET /api/v1/auth/logout completed with HTTP 404
+2026-08-26 11:53:24,payment-service,LOGOUT,INFO,198.51.100.4,200,/api/v1/auth/logout,User session terminated gracefully
+2026-08-26 11:53:54,payment-service,PAYMENT,INFO,192.168.1.10,200,/api/v1/checkout,Payment transaction processed successfully: $189.00 USD
+2026-08-26 11:54:39,payment-service,HTTP_REQUEST,INFO,192.168.1.10,200,/api/v1/auth/login,GET /api/v1/auth/login completed with HTTP 200
+2026-08-26 11:55:21,api-server-02,HTTP_REQUEST,INFO,10.0.0.15,200,/api/v1/products,GET /api/v1/products completed with HTTP 200
+2026-08-26 11:56:01,api-server-01,LOGOUT,INFO,203.0.113.19,200,/api/v1/auth/logout,User session terminated gracefully
+2026-08-26 11:56:36,web-server-01,DATABASE_QUERY,INFO,198.51.100.4,,,SELECT * FROM transactions WHERE active = 1 (took 3ms)
+2026-08-26 11:57:08,web-server-01,PAYMENT,INFO,172.16.0.5,200,/api/v1/checkout,Payment transaction processed successfully: $87.00 USD
+2026-08-26 11:57:20,api-server-02,AUTHENTICATION,INFO,172.16.0.88,200,/api/v1/auth/login,User authentication succeeded for user_784
+2026-08-26 11:57:32,web-server-01,LOGIN,INFO,10.0.0.15,200,/api/v1/auth/login,User authentication succeeded for user_350
+2026-08-26 11:58:06,api-server-01,PAYMENT,INFO,198.51.100.4,200,/api/v1/checkout,Payment transaction processed successfully: $181.00 USD
+2026-08-26 11:58:47,payment-service,DATABASE_QUERY,INFO,10.0.0.28,,,SELECT * FROM sessions WHERE active = 1 (took 7ms)
+2026-08-26 11:59:06,web-server-01,LOGOUT,INFO,198.51.100.4,200,/api/v1/auth/logout,User session terminated gracefully
+2026-08-26 11:59:45,api-server-01,PAYMENT,INFO,198.51.100.4,200,/api/v1/checkout,Payment transaction processed successfully: $75.00 USD
+2026-08-26 11:59:53,web-server-01,API_REQUEST,INFO,10.0.0.15,200,/api/v1/users,GET /api/v1/users completed with HTTP 200
+2026-08-26 12:00:30,auth-server-01,HTTP_REQUEST,INFO,10.0.0.15,200,/api/v1/auth/login,GET /api/v1/auth/login completed with HTTP 200
+2026-08-26 12:01:10,api-server-02,AUTHENTICATION,INFO,10.0.0.28,200,/api/v1/auth/login,User authentication succeeded for user_490
+2026-08-26 12:01:46,database-01,API_REQUEST,INFO,10.0.0.28,204,/api/v1/products,GET /api/v1/products completed with HTTP 204
+2026-08-26 12:01:56,web-server-01,DATABASE_QUERY,INFO,198.51.100.4,,,SELECT * FROM transactions WHERE active = 1 (took 43ms)
+2026-08-26 12:02:41,web-server-01,PAYMENT,INFO,192.168.1.10,200,/api/v1/checkout,Payment transaction processed successfully: $150.00 USD
+2026-08-26 12:03:11,web-server-01,FILE_ACCESS,INFO,10.0.0.15,200,/static/assets,Static asset read operation completed: index.css
+2026-08-26 12:03:26,api-server-02,FILE_ACCESS,INFO,172.16.0.88,200,/static/assets,Static asset read operation completed: index.css
+2026-08-26 12:03:41,api-server-01,HTTP_REQUEST,INFO,172.16.0.88,200,/api/v1/checkout,GET /api/v1/checkout completed with HTTP 200
+2026-08-26 12:03:56,web-server-01,FILE_ACCESS,INFO,172.16.0.88,200,/static/assets,Static asset read operation completed: index.css
+2026-08-26 12:04:28,api-server-02,FILE_ACCESS,INFO,192.168.1.42,200,/static/assets,Static asset read operation completed: index.css
+2026-08-26 12:04:53,auth-server-01,API_REQUEST,INFO,172.16.0.88,200,/api/v1/users,GET /api/v1/users completed with HTTP 200
+2026-08-26 12:05:37,database-01,FILE_ACCESS,INFO,192.168.1.42,200,/static/assets,Static asset read operation completed: index.css
+2026-08-26 12:05:46,payment-service,LOGOUT,INFO,198.51.100.4,200,/api/v1/auth/logout,User session terminated gracefully
+2026-08-26 12:06:19,api-server-02,HTTP_REQUEST,INFO,198.51.100.4,201,/api/v1/orders,GET /api/v1/orders completed with HTTP 201
+2026-08-26 12:06:40,api-server-01,FILE_ACCESS,INFO,203.0.113.19,200,/static/assets,Static asset read operation completed: index.css
+2026-08-26 12:06:57,database-01,API_REQUEST,INFO,10.0.0.28,200,/api/v1/inventory,GET /api/v1/inventory completed with HTTP 200
+2026-08-26 12:07:04,api-server-01,LOGOUT,INFO,10.0.0.15,200,/api/v1/auth/logout,User session terminated gracefully
+2026-08-26 12:07:23,auth-server-01,FILE_ACCESS,INFO,172.16.0.5,200,/static/assets,Static asset read operation completed: index.css
+2026-08-26 12:07:51,web-server-01,LOGIN,INFO,192.168.1.42,200,/api/v1/auth/login,User authentication succeeded for user_904
+2026-08-26 12:08:05,api-server-02,HTTP_REQUEST,INFO,172.16.0.88,200,/api/v1/checkout,GET /api/v1/checkout completed with HTTP 200
+2026-08-26 12:08:11,web-server-01,FILE_ACCESS,INFO,192.168.1.10,200,/static/assets,Static asset read operation completed: index.css
+2026-08-26 12:08:29,api-server-01,FILE_ACCESS,INFO,10.0.0.28,200,/static/assets,Static asset read operation completed: index.css
+2026-08-26 12:08:53,auth-server-01,LOGOUT,INFO,172.16.0.5,200,/api/v1/auth/logout,User session terminated gracefully
+2026-08-26 12:09:19,auth-server-01,AUTHENTICATION,INFO,172.16.0.5,200,/api/v1/auth/login,User authentication succeeded for user_501
+2026-08-26 12:09:33,payment-service,DATABASE_QUERY,INFO,192.168.1.10,,,SELECT * FROM users WHERE active = 1 (took 6ms)
+2026-08-26 12:09:55,database-01,PAYMENT,INFO,192.168.1.25,200,/api/v1/checkout,Payment transaction processed successfully: $57.00 USD
+2026-08-26 12:10:26,auth-server-01,LOGIN,WARNING,198.51.100.4,401,/api/v1/auth/login,User authentication invalid password for user_966
+2026-08-26 12:10:55,api-server-02,DATABASE_QUERY,INFO,198.51.100.4,,,SELECT * FROM orders WHERE active = 1 (took 36ms)
+2026-08-26 12:11:00,auth-server-01,API_REQUEST,INFO,192.168.1.10,201,/static/app.js,GET /static/app.js completed with HTTP 201
+2026-08-26 12:11:06,payment-service,PAYMENT,ERROR,192.168.1.20,503,/api/v1/checkout,Payment gateway connection timeout: upstream Stripe API unreachable (attempt 1/8)
+2026-08-26 12:11:09,payment-service,PAYMENT,ERROR,192.168.1.20,503,/api/v1/checkout,Payment gateway connection timeout: upstream Stripe API unreachable (attempt 2/8)
+2026-08-26 12:11:12,payment-service,PAYMENT,ERROR,192.168.1.20,500,/api/v1/checkout,Payment gateway connection timeout: upstream Stripe API unreachable (attempt 3/8)
+2026-08-26 12:11:15,payment-service,PAYMENT,ERROR,192.168.1.20,500,/api/v1/checkout,Payment gateway connection timeout: upstream Stripe API unreachable (attempt 4/8)
+2026-08-26 12:11:18,payment-service,PAYMENT,ERROR,192.168.1.20,502,/api/v1/checkout,Payment gateway connection timeout: upstream Stripe API unreachable (attempt 5/8)
+2026-08-26 12:11:19,auth-server-01,LOGIN,WARNING,198.51.100.4,401,/api/v1/auth/login,User authentication invalid password for user_935
+2026-08-26 12:11:21,payment-service,PAYMENT,CRITICAL,192.168.1.20,500,/api/v1/checkout,Payment gateway connection timeout: upstream Stripe API unreachable (attempt 6/8)
+2026-08-26 12:11:24,payment-service,PAYMENT,CRITICAL,192.168.1.20,503,/api/v1/checkout,Payment gateway connection timeout: upstream Stripe API unreachable (attempt 7/8)
+2026-08-26 12:11:27,payment-service,PAYMENT,CRITICAL,192.168.1.20,502,/api/v1/checkout,Payment gateway connection timeout: upstream Stripe API unreachable (attempt 8/8)
+2026-08-26 12:11:31,database-01,HTTP_REQUEST,INFO,203.0.113.19,200,/api/v1/auth/logout,GET /api/v1/auth/logout completed with HTTP 200
+2026-08-26 12:12:10,web-server-01,DATABASE_QUERY,INFO,10.0.0.15,,,SELECT * FROM users WHERE active = 1 (took 19ms)
+2026-08-26 12:12:45,api-server-01,FILE_ACCESS,INFO,172.16.0.5,200,/static/assets,Static asset read operation completed: index.css
+2026-08-26 12:13:20,api-server-02,LOGOUT,INFO,10.0.0.15,200,/api/v1/auth/logout,User session terminated gracefully
+2026-08-26 12:13:27,api-server-01,AUTHENTICATION,INFO,192.168.1.10,200,/api/v1/auth/login,User authentication succeeded for user_852
+2026-08-26 12:14:07,api-server-02,LOGIN,INFO,10.0.0.15,200,/api/v1/auth/login,User authentication succeeded for user_466
+2026-08-26 12:14:21,auth-server-01,API_REQUEST,INFO,198.51.100.4,200,/static/app.js,GET /static/app.js completed with HTTP 200
+2026-08-26 12:15:01,api-server-02,PAYMENT,INFO,203.0.113.19,200,/api/v1/checkout,Payment transaction processed successfully: $104.00 USD
+2026-08-26 12:15:21,payment-service,PAYMENT,INFO,192.168.1.10,200,/api/v1/checkout,Payment transaction processed successfully: $179.00 USD
+2026-08-26 12:15:30,api-server-02,API_REQUEST,INFO,192.168.1.10,200,/metrics,GET /metrics completed with HTTP 200
+2026-08-26 12:15:45,api-server-02,PAYMENT,INFO,172.16.0.88,200,/api/v1/checkout,Payment transaction processed successfully: $121.00 USD
+2026-08-26 12:16:22,payment-service,LOGOUT,INFO,198.51.100.4,200,/api/v1/auth/logout,User session terminated gracefully
+2026-08-26 12:16:59,payment-service,FILE_ACCESS,INFO,203.0.113.19,200,/static/assets,Static asset read operation completed: index.css
+2026-08-26 12:17:41,database-01,FILE_ACCESS,INFO,198.51.100.4,200,/static/assets,Static asset read operation completed: index.css
+2026-08-26 12:17:56,web-server-01,HTTP_REQUEST,INFO,10.0.0.15,201,/healthz,GET /healthz completed with HTTP 201
+2026-08-26 12:18:40,database-01,LOGIN,INFO,172.16.0.5,200,/api/v1/auth/login,User authentication succeeded for user_254
+2026-08-26 12:19:23,database-01,AUTHENTICATION,WARNING,172.16.0.5,401,/api/v1/auth/login,User authentication invalid password for user_487
+2026-08-26 12:19:51,api-server-01,API_REQUEST,INFO,203.0.113.19,204,/api/v1/checkout,GET /api/v1/checkout completed with HTTP 204
+2026-08-26 12:20:03,web-server-01,FILE_ACCESS,INFO,203.0.113.19,200,/static/assets,Static asset read operation completed: index.css
+2026-08-26 12:20:43,api-server-01,API_REQUEST,INFO,172.16.0.88,200,/api/v1/inventory,GET /api/v1/inventory completed with HTTP 200
+2026-08-26 12:21:16,database-01,API_REQUEST,INFO,192.168.1.25,201,/api/v1/products,GET /api/v1/products completed with HTTP 201
+2026-08-26 12:21:48,api-server-02,LOGIN,INFO,192.168.1.42,200,/api/v1/auth/login,User authentication succeeded for user_691
+2026-08-26 12:22:21,api-server-02,PAYMENT,INFO,10.0.0.28,200,/api/v1/checkout,Payment transaction processed successfully: $22.00 USD
+2026-08-26 12:22:43,web-server-01,AUTHENTICATION,INFO,192.168.1.42,200,/api/v1/auth/login,User authentication succeeded for user_475
+2026-08-26 12:23:27,api-server-01,PAYMENT,INFO,10.0.0.15,200,/api/v1/checkout,Payment transaction processed successfully: $57.00 USD
+2026-08-26 12:24:01,auth-server-01,AUTHENTICATION,WARNING,192.168.1.25,401,/api/v1/auth/login,User authentication invalid password for user_610
+2026-08-26 12:24:39,api-server-02,AUTHENTICATION,INFO,172.16.0.5,200,/api/v1/auth/login,User authentication succeeded for user_358
+2026-08-26 12:25:23,api-server-02,FILE_ACCESS,INFO,203.0.113.19,200,/static/assets,Static asset read operation completed: index.css
+2026-08-26 12:25:47,api-server-02,API_REQUEST,INFO,192.168.1.10,200,/api/v1/products,GET /api/v1/products completed with HTTP 200
+2026-08-26 12:26:08,payment-service,API_REQUEST,INFO,172.16.0.88,200,/api/v1/inventory,GET /api/v1/inventory completed with HTTP 200
+2026-08-26 12:26:28,web-server-01,LOGIN,INFO,198.51.100.4,200,/api/v1/auth/login,User authentication succeeded for user_117
+2026-08-26 12:27:03,web-server-01,HTTP_REQUEST,INFO,198.51.100.4,201,/healthz,GET /healthz completed with HTTP 201
+2026-08-26 12:27:42,api-server-01,LOGIN,INFO,192.168.1.10,200,/api/v1/auth/login,User authentication succeeded for user_475
+2026-08-26 12:27:54,payment-service,PAYMENT,INFO,192.168.1.42,200,/api/v1/checkout,Payment transaction processed successfully: $214.00 USD
+2026-08-26 12:28:14,auth-server-01,API_REQUEST,INFO,10.0.0.15,200,/api/v1/orders,GET /api/v1/orders completed with HTTP 200
+2026-08-26 12:28:39,database-01,FILE_ACCESS,INFO,10.0.0.15,200,/static/assets,Static asset read operation completed: index.css
+2026-08-26 12:28:47,api-server-02,AUTHENTICATION,INFO,10.0.0.15,200,/api/v1/auth/login,User authentication succeeded for user_465
+2026-08-26 12:28:58,api-server-01,API_REQUEST,INFO,203.0.113.19,200,/api/v1/auth/login,GET /api/v1/auth/login completed with HTTP 200
+2026-08-26 12:29:13,auth-server-01,FILE_ACCESS,INFO,198.51.100.4,200,/static/assets,Static asset read operation completed: index.css
+2026-08-26 12:29:34,auth-server-01,AUTHENTICATION,INFO,198.51.100.4,200,/api/v1/auth/login,User authentication succeeded for user_807
+2026-08-26 12:30:12,api-server-02,DATABASE_QUERY,INFO,192.168.1.10,,,SELECT * FROM orders WHERE active = 1 (took 16ms)
+2026-08-26 12:30:37,web-server-01,AUTHENTICATION,INFO,172.16.0.5,200,/api/v1/auth/login,User authentication succeeded for user_499
+2026-08-26 12:30:58,api-server-02,LOGIN,INFO,172.16.0.5,200,/api/v1/auth/login,User authentication succeeded for user_230
+2026-08-26 12:31:14,auth-server-01,LOGIN,INFO,192.168.1.10,200,/api/v1/auth/login,User authentication succeeded for user_131
+2026-08-26 12:31:59,payment-service,FILE_ACCESS,INFO,192.168.1.42,200,/static/assets,Static asset read operation completed: index.css
+2026-08-26 12:32:09,auth-server-01,LOGOUT,INFO,198.51.100.4,200,/api/v1/auth/logout,User session terminated gracefully
+2026-08-26 12:32:51,api-server-01,FILE_ACCESS,INFO,172.16.0.5,200,/static/assets,Static asset read operation completed: index.css
+2026-08-26 12:33:08,payment-service,FILE_ACCESS,INFO,192.168.1.25,200,/static/assets,Static asset read operation completed: index.css
+2026-08-26 12:33:22,payment-service,LOGIN,INFO,10.0.0.15,200,/api/v1/auth/login,User authentication succeeded for user_286
+2026-08-26 12:33:39,api-server-01,DATABASE_QUERY,INFO,192.168.1.25,,,SELECT * FROM transactions WHERE active = 1 (took 22ms)
+2026-08-26 12:33:59,web-server-01,AUTHENTICATION,INFO,198.51.100.4,200,/api/v1/auth/login,User authentication succeeded for user_985
+2026-08-26 12:34:29,api-server-02,HTTP_REQUEST,INFO,10.0.0.28,200,/api/v1/inventory,GET /api/v1/inventory completed with HTTP 200
+2026-08-26 12:34:37,database-01,HTTP_REQUEST,INFO,172.16.0.88,200,/api/v1/checkout,GET /api/v1/checkout completed with HTTP 200
+2026-08-26 12:34:58,payment-service,LOGOUT,INFO,192.168.1.25,200,/api/v1/auth/logout,User session terminated gracefully
+2026-08-26 12:35:35,web-server-01,PAYMENT,INFO,192.168.1.42,200,/api/v1/checkout,Payment transaction processed successfully: $15.00 USD
+2026-08-26 12:35:43,payment-service,DATABASE_QUERY,INFO,192.168.1.10,,,SELECT * FROM users WHERE active = 1 (took 27ms)
+2026-08-26 12:36:26,web-server-01,HTTP_REQUEST,INFO,203.0.113.19,200,/api/v1/auth/login,GET /api/v1/auth/login completed with HTTP 200
+2026-08-26 12:37:08,payment-service,DATABASE_QUERY,INFO,198.51.100.4,,,SELECT * FROM users WHERE active = 1 (took 32ms)
+2026-08-26 12:37:51,auth-server-01,HTTP_REQUEST,INFO,192.168.1.42,200,/api/v1/auth/logout,GET /api/v1/auth/logout completed with HTTP 200
+2026-08-26 12:37:58,web-server-01,DATABASE_QUERY,INFO,192.168.1.42,,,SELECT * FROM transactions WHERE active = 1 (took 18ms)
+2026-08-26 12:38:28,api-server-02,LOGIN,WARNING,192.168.1.10,401,/api/v1/auth/login,User authentication invalid password for user_440
+2026-08-26 12:38:46,payment-service,DATABASE_QUERY,INFO,172.16.0.88,,,SELECT * FROM transactions WHERE active = 1 (took 25ms)
+2026-08-26 12:39:06,web-server-01,API_REQUEST,INFO,203.0.113.19,200,/metrics,GET /metrics completed with HTTP 200
+2026-08-26 12:39:25,web-server-01,DATABASE_QUERY,INFO,10.0.0.15,,,SELECT * FROM sessions WHERE active = 1 (took 13ms)
+2026-08-26 12:39:36,auth-server-01,FILE_ACCESS,INFO,203.0.113.19,200,/static/assets,Static asset read operation completed: index.css
+2026-08-26 12:39:47,auth-server-01,FILE_ACCESS,INFO,192.168.1.25,200,/static/assets,Static asset read operation completed: index.css
+2026-08-26 12:40:13,auth-server-01,AUTHENTICATION,INFO,192.168.1.42,200,/api/v1/auth/login,User authentication succeeded for user_632
+2026-08-26 12:40:20,database-01,DATABASE_QUERY,INFO,192.168.1.42,,,SELECT * FROM sessions WHERE active = 1 (took 37ms)
+2026-08-26 12:40:36,api-server-02,DATABASE_QUERY,INFO,172.16.0.5,,,SELECT * FROM orders WHERE active = 1 (took 35ms)
+2026-08-26 12:40:53,auth-server-01,PAYMENT,INFO,192.168.1.10,200,/api/v1/checkout,Payment transaction processed successfully: $40.00 USD
+2026-08-26 12:40:58,database-01,PAYMENT,INFO,172.16.0.5,200,/api/v1/checkout,Payment transaction processed successfully: $61.00 USD
+2026-08-26 12:41:15,auth-server-01,LOGIN,INFO,203.0.113.19,200,/api/v1/auth/login,User authentication succeeded for user_331
+2026-08-26 12:41:59,api-server-01,LOGOUT,INFO,10.0.0.28,200,/api/v1/auth/logout,User session terminated gracefully
+2026-08-26 12:42:34,database-01,LOGIN,INFO,172.16.0.88,200,/api/v1/auth/login,User authentication succeeded for user_250
+2026-08-26 12:43:08,auth-server-01,LOGIN,INFO,192.168.1.10,200,/api/v1/auth/login,User authentication succeeded for user_362
+2026-08-26 12:43:23,payment-service,API_REQUEST,INFO,10.0.0.15,200,/api/v1/products,GET /api/v1/products completed with HTTP 200
+2026-08-26 12:43:36,api-server-01,DATABASE_QUERY,INFO,172.16.0.88,,,SELECT * FROM users WHERE active = 1 (took 18ms)
+2026-08-26 12:43:58,database-01,LOGIN,INFO,10.0.0.15,200,/api/v1/auth/login,User authentication succeeded for user_504
+2026-08-26 12:44:28,api-server-02,HTTP_REQUEST,INFO,192.168.1.42,200,/api/v1/auth/login,GET /api/v1/auth/login completed with HTTP 200
+2026-08-26 12:45:13,database-01,FILE_ACCESS,INFO,172.16.0.5,200,/static/assets,Static asset read operation completed: index.css
+2026-08-26 12:45:33,api-server-01,AUTHENTICATION,INFO,192.168.1.25,200,/api/v1/auth/login,User authentication succeeded for user_681
+2026-08-26 12:46:08,database-01,LOGOUT,INFO,172.16.0.88,200,/api/v1/auth/logout,User session terminated gracefully
+2026-08-26 12:46:21,auth-server-01,LOGOUT,INFO,198.51.100.4,200,/api/v1/auth/logout,User session terminated gracefully
+2026-08-26 12:47:02,payment-service,LOGOUT,INFO,192.168.1.10,200,/api/v1/auth/logout,User session terminated gracefully
+2026-08-26 12:47:14,web-server-01,AUTHENTICATION,INFO,192.168.1.42,200,/api/v1/auth/login,User authentication succeeded for user_949
+2026-08-26 12:47:24,api-server-01,HTTP_REQUEST,INFO,10.0.0.15,200,/api/v1/auth/login,GET /api/v1/auth/login completed with HTTP 200
+2026-08-26 12:47:44,auth-server-01,API_REQUEST,INFO,10.0.0.28,200,/healthz,GET /healthz completed with HTTP 200
+2026-08-26 12:48:01,api-server-02,HTTP_REQUEST,INFO,203.0.113.19,301,/api/v1/inventory,GET /api/v1/inventory completed with HTTP 301
+2026-08-26 12:48:41,payment-service,FILE_ACCESS,INFO,192.168.1.10,200,/static/assets,Static asset read operation completed: index.css
+2026-08-26 12:48:55,api-server-02,PAYMENT,INFO,10.0.0.28,200,/api/v1/checkout,Payment transaction processed successfully: $18.00 USD
+2026-08-26 12:49:11,api-server-01,PAYMENT,INFO,172.16.0.88,200,/api/v1/checkout,Payment transaction processed successfully: $142.00 USD
+2026-08-26 12:49:40,database-01,LOGOUT,INFO,203.0.113.19,200,/api/v1/auth/logout,User session terminated gracefully
+2026-08-26 12:50:04,database-01,PAYMENT,INFO,198.51.100.4,200,/api/v1/checkout,Payment transaction processed successfully: $221.00 USD
+2026-08-26 12:50:37,web-server-01,DATABASE_QUERY,INFO,203.0.113.19,,,SELECT * FROM transactions WHERE active = 1 (took 36ms)
+2026-08-26 12:50:54,api-server-02,FILE_ACCESS,INFO,172.16.0.5,200,/static/assets,Static asset read operation completed: index.css
+2026-08-26 12:51:10,api-server-01,LOGOUT,INFO,203.0.113.19,200,/api/v1/auth/logout,User session terminated gracefully
+2026-08-26 12:51:34,api-server-02,AUTHENTICATION,INFO,192.168.1.10,200,/api/v1/auth/login,User authentication succeeded for user_552
+2026-08-26 12:51:55,auth-server-01,LOGOUT,INFO,10.0.0.15,200,/api/v1/auth/logout,User session terminated gracefully
+2026-08-26 12:52:16,web-server-01,LOGIN,WARNING,192.168.1.10,401,/api/v1/auth/login,User authentication invalid password for user_834
+2026-08-26 12:53:00,web-server-01,DATABASE_QUERY,INFO,172.16.0.5,,,SELECT * FROM sessions WHERE active = 1 (took 37ms)
+2026-08-26 12:53:28,payment-service,LOGOUT,INFO,192.168.1.42,200,/api/v1/auth/logout,User session terminated gracefully
+2026-08-26 12:54:13,api-server-02,LOGIN,INFO,10.0.0.15,200,/api/v1/auth/login,User authentication succeeded for user_311
+2026-08-26 12:54:31,api-server-02,LOGIN,INFO,172.16.0.5,200,/api/v1/auth/login,User authentication succeeded for user_932
+2026-08-26 12:55:15,payment-service,DATABASE_QUERY,INFO,10.0.0.15,,,SELECT * FROM transactions WHERE active = 1 (took 25ms)
+2026-08-26 12:55:54,database-01,AUTHENTICATION,INFO,192.168.1.25,200,/api/v1/auth/login,User authentication succeeded for user_476
+2026-08-26 12:56:28,web-server-01,API_REQUEST,INFO,192.168.1.42,204,/metrics,GET /metrics completed with HTTP 204
+2026-08-26 12:57:06,api-server-01,API_REQUEST,INFO,172.16.0.5,200,/api/v1/auth/logout,GET /api/v1/auth/logout completed with HTTP 200
+2026-08-26 12:57:31,auth-server-01,FILE_ACCESS,INFO,203.0.113.19,200,/static/assets,Static asset read operation completed: index.css
+2026-08-26 12:57:40,api-server-01,LOGIN,INFO,192.168.1.25,200,/api/v1/auth/login,User authentication succeeded for user_980
+2026-08-26 12:58:19,payment-service,LOGOUT,INFO,10.0.0.28,200,/api/v1/auth/logout,User session terminated gracefully
+2026-08-26 12:59:02,api-server-01,LOGIN,INFO,192.168.1.10,200,/api/v1/auth/login,User authentication succeeded for user_129
+2026-08-26 12:59:23,api-server-02,API_REQUEST,INFO,192.168.1.42,200,/healthz,GET /healthz completed with HTTP 200
+2026-08-26 12:59:41,database-01,API_REQUEST,INFO,172.16.0.88,200,/api/v1/orders,GET /api/v1/orders completed with HTTP 200
+2026-08-26 13:00:26,web-server-01,LOGOUT,INFO,172.16.0.5,200,/api/v1/auth/logout,User session terminated gracefully
+2026-08-26 13:00:50,database-01,DATABASE_QUERY,INFO,192.168.1.10,,,SELECT * FROM sessions WHERE active = 1 (took 29ms)
+2026-08-26 13:01:28,database-01,LOGOUT,INFO,10.0.0.28,200,/api/v1/auth/logout,User session terminated gracefully
+2026-08-26 13:02:06,auth-server-01,PAYMENT,INFO,192.168.1.25,200,/api/v1/checkout,Payment transaction processed successfully: $123.00 USD
+2026-08-26 13:02:16,api-server-01,LOGIN,INFO,203.0.113.19,200,/api/v1/auth/login,User authentication succeeded for user_386
+2026-08-26 13:02:55,auth-server-01,LOGOUT,INFO,203.0.113.19,200,/api/v1/auth/logout,User session terminated gracefully
+2026-08-26 13:26:05,auth-server-01,AUTHENTICATION,WARNING,194.26.29.112,401,/api/v1/auth/login,Failed password authentication attempt for admin account (burst attempt 1)
+2026-08-26 13:26:07,auth-server-01,AUTHENTICATION,WARNING,194.26.29.112,401,/api/v1/auth/login,Failed password authentication attempt for admin account (burst attempt 2)
+2026-08-26 13:26:09,auth-server-01,AUTHENTICATION,WARNING,194.26.29.112,401,/api/v1/auth/login,Failed password authentication attempt for admin account (burst attempt 3)
+2026-08-26 13:26:11,auth-server-01,AUTHENTICATION,WARNING,194.26.29.112,401,/api/v1/auth/login,Failed password authentication attempt for admin account (burst attempt 4)
+2026-08-26 13:26:13,auth-server-01,AUTHENTICATION,WARNING,194.26.29.112,401,/api/v1/auth/login,Failed password authentication attempt for admin account (burst attempt 5)
+2026-08-26 13:26:15,auth-server-01,AUTHENTICATION,WARNING,194.26.29.112,401,/api/v1/auth/login,Failed password authentication attempt for admin account (burst attempt 6)
+2026-08-26 13:26:17,auth-server-01,AUTHENTICATION,WARNING,194.26.29.112,401,/api/v1/auth/login,Failed password authentication attempt for admin account (burst attempt 7)
+2026-08-26 13:26:19,auth-server-01,AUTHENTICATION,ERROR,194.26.29.112,401,/api/v1/auth/login,Failed password authentication attempt for admin account (burst attempt 8)
+2026-08-26 13:26:21,auth-server-01,AUTHENTICATION,ERROR,194.26.29.112,403,/api/v1/auth/login,Failed password authentication attempt for admin account (burst attempt 9)
+2026-08-26 13:26:23,auth-server-01,AUTHENTICATION,ERROR,194.26.29.112,403,/api/v1/auth/login,Failed password authentication attempt for admin account (burst attempt 10)
+2026-08-26 14:21:07,database-01,DATABASE_QUERY,CRITICAL,10.0.0.15,,,Deadlock detected on table 'orders' while acquiring exclusive transaction lock: connection pool exhausted (active=100/100)
+2026-08-26 14:21:11,database-01,DATABASE_QUERY,CRITICAL,10.0.0.15,,,Deadlock detected on table 'orders' while acquiring exclusive transaction lock: connection pool exhausted (active=100/100)
+2026-08-26 14:21:15,database-01,DATABASE_QUERY,CRITICAL,10.0.0.15,,,Deadlock detected on table 'orders' while acquiring exclusive transaction lock: connection pool exhausted (active=100/100)
+2026-08-26 14:21:19,database-01,DATABASE_QUERY,CRITICAL,10.0.0.15,,,Deadlock detected on table 'orders' while acquiring exclusive transaction lock: connection pool exhausted (active=100/100)
+2026-08-26 14:21:23,database-01,DATABASE_QUERY,CRITICAL,10.0.0.15,,,Deadlock detected on table 'orders' while acquiring exclusive transaction lock: connection pool exhausted (active=100/100)
+2026-08-26 15:16:03,api-server-02,SERVER_ERROR,CRITICAL,192.168.1.42,500,/api/v1/products,Out of Memory (OOM): Worker process killed by kernel while deserializing payload
+2026-08-26 15:31:04,web-server-01,HTTP_REQUEST,WARNING,185.220.101.5,404,/.env,File or route not found: GET /.env from scanner agent
+2026-08-26 15:31:05,web-server-01,HTTP_REQUEST,WARNING,185.220.101.5,404,/wp-admin/login.php,File or route not found: GET /wp-admin/login.php from scanner agent
+2026-08-26 15:31:06,web-server-01,HTTP_REQUEST,WARNING,185.220.101.5,404,/phpmyadmin,File or route not found: GET /phpmyadmin from scanner agent
+2026-08-26 15:31:07,web-server-01,HTTP_REQUEST,WARNING,185.220.101.5,404,/api/v1/debug,File or route not found: GET /api/v1/debug from scanner agent
