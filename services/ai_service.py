@@ -208,7 +208,15 @@ Return your response as strict JSON adhering to this structure:
                 ),
             )
 
-            raw_text = response.text or "{}"
+            raw_text = (response.text or "{}").strip()
+            if raw_text.startswith("```json"):
+                raw_text = raw_text[7:]
+            elif raw_text.startswith("```"):
+                raw_text = raw_text[3:]
+            if raw_text.endswith("```"):
+                raw_text = raw_text[:-3]
+            raw_text = raw_text.strip()
+
             parsed_json = json.loads(raw_text)
 
             # Validate required fields
