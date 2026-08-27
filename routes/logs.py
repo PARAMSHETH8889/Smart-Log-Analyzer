@@ -168,69 +168,97 @@ def get_log_context(log_id: int):
 def upload_logs():
     """
     Handle CSV log dataset upload, validation, and ingestion.
-    Includes filename sanitization and MIME-type validation.
+    Guarantees strict JSON response output with no HTML error leaks.
     """
-    if "file" not in request.files:
+    try:
+        if "file" not in request.files:
+            return jsonify({
+                "success": False,
+                "message": "No file attached to upload request.",
+            }), 400
+
+        file = request.files["file"]
+        if not file or file.filename == "":
+            return jsonify({
+                "success": False,
+                "message": "No file selected for upload.",
+            }), 400
+
+        # Sanitize filename
+        sanitized_name = secure_filename(file.filename)
+        if not sanitized_name:
+            sanitized_name = "uploaded_logs.csv"
+
+        # Validate file extension
+        if not sanitized_name.lower().endswith((".csv", ".txt", ".log")):
+            return jsonify({
+                "success": False,
+                "message": "Invalid file format. Please upload a .csv or structured text log file.",
+            }), 400
+
+        # Read file bytes safely
+        file_bytes = file.read()
+        if not file_bytes or not file_bytes.strip():
+            return jsonify({
+                "success": False,
+                "message": "The uploaded CSV file is empty.",
+            }), 400
+
+        # Parse and validate uploaded content
+        validation_result = LogParser.process_and_validate(file_bytes)
+
+        if not validation_result.is_valid and not validation_result.valid_records:
+            return jsonify({
+                "success": False,
+                "total_processed": validation_result.total_processed,
+                "imported_count": 0,
+                "rejected_count": validation_result.rejected_count,
+                "errors": validation_result.error_summary(),
+                "message": "Upload failed. All rows were rejected due to schema or parsing errors.",
+            }), 422
+
+        # Ingest valid records and execute deterministic anomaly detection
+        ingested_logs = LogParser.ingest_records(
+            validation_result.valid_records, run_detection=True
+        )
+
+        ingested_ids = [l.id for l in ingested_logs if l.id]
+        if ingested_ids:
+            anomalies_detected = Log.query.filter(
+                Log.id.in_(ingested_ids), Log.anomaly == True
+            ).count()
+        else:
+            anomalies_detected = 0
+
+        # Optionally auto-sync new records to Supabase in background
+        if SupabaseService.is_configured() and ingested_logs:
+            try:
+                logs_payload = [l.to_supabase_log() for l in ingested_logs]
+                SupabaseService.insert_logs(logs_payload)
+                anom_payload = [l.to_supabase_anomaly() for l in ingested_logs if l.anomaly]
+                if anom_payload:
+                    SupabaseService.insert_anomalies([a for a in anom_payload if a])
+            except Exception as sync_ex:
+                print(f"[Supabase Auto-Sync Notice] {sync_ex}")
+
         return jsonify({
-            "success": False,
-            "message": "No file part in the upload request.",
-        }), 400
-
-    file = request.files["file"]
-    if not file or file.filename == "":
-        return jsonify({
-            "success": False,
-            "message": "No file selected for upload.",
-        }), 400
-
-    # Sanitize filename (removes null bytes, path traversal attempts like ../../)
-    sanitized_name = secure_filename(file.filename)
-    if not sanitized_name:
-        sanitized_name = "uploaded_logs.csv"
-
-    # Validate file extension strictly
-    if not sanitized_name.lower().endswith((".csv", ".txt", ".log")):
-        return jsonify({
-            "success": False,
-            "message": "Invalid file format. Only CSV or structured log files are supported.",
-        }), 400
-
-    # Parse and validate uploaded content
-    validation_result = LogParser.process_and_validate(file.stream)
-
-    if not validation_result.is_valid and not validation_result.valid_records:
-        return jsonify({
-            "success": False,
+            "success": True,
             "total_processed": validation_result.total_processed,
-            "imported_count": 0,
+            "imported_count": len(ingested_logs),
             "rejected_count": validation_result.rejected_count,
-            "errors": validation_result.error_summary(),
-            "message": "Upload failed. All records were rejected due to validation errors.",
-        }), 422
+            "duplicate_count": validation_result.duplicate_count,
+            "anomalies_detected": anomalies_detected,
+            "errors": validation_result.error_summary()[:20],
+            "message": f"Successfully imported {len(ingested_logs)} logs. Detected {anomalies_detected} anomalies.",
+        })
 
-    # Ingest valid records and execute deterministic anomaly detection
-    ingested_logs = LogParser.ingest_records(
-        validation_result.valid_records, run_detection=True
-    )
-
-    ingested_ids = [l.id for l in ingested_logs if l.id]
-    if ingested_ids:
-        anomalies_detected = Log.query.filter(
-            Log.id.in_(ingested_ids), Log.anomaly == True
-        ).count()
-    else:
-        anomalies_detected = 0
-
-    return jsonify({
-        "success": True,
-        "total_processed": validation_result.total_processed,
-        "imported_count": len(ingested_logs),
-        "rejected_count": validation_result.rejected_count,
-        "duplicate_count": validation_result.duplicate_count,
-        "anomalies_detected": anomalies_detected,
-        "errors": validation_result.error_summary()[:20],  # Return up to 20 errors
-        "message": f"Successfully imported {len(ingested_logs)} logs. Detected {anomalies_detected} anomalies.",
-    })
+    except Exception as ex:
+        db.session.rollback()
+        return jsonify({
+            "success": False,
+            "message": f"Processing error: {str(ex)}",
+            "errors": [{"row": "N/A", "field": "server", "message": str(ex)}],
+        }), 500
 
 
 @logs_bp.route("/api/logs/<int:log_id>/analyze", methods=["POST"])

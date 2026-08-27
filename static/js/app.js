@@ -253,7 +253,19 @@ window.LogApp = (function () {
                     method: 'POST',
                     body: formData,
                 });
-                const data = await response.json();
+
+                const responseText = await response.text();
+                let data;
+                try {
+                    data = JSON.parse(responseText);
+                } catch (jsonErr) {
+                    let cleanMsg = responseText.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+                    if (cleanMsg.length > 180) cleanMsg = cleanMsg.substring(0, 180) + '...';
+                    data = {
+                        success: false,
+                        message: cleanMsg || `Upload error (HTTP ${response.status})`
+                    };
+                }
 
                 if (response.ok && data.success) {
                     showToast(data.message, 'success');
@@ -1036,7 +1048,15 @@ window.LogApp = (function () {
 
                 try {
                     const res = await fetch(`/api/logs/${logId}/analyze`, { method: 'POST' });
-                    const result = await res.json();
+                    const resText = await res.text();
+                    let result;
+                    try {
+                        result = JSON.parse(resText);
+                    } catch (e) {
+                        let clean = resText.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+                        if (clean.length > 180) clean = clean.substring(0, 180) + '...';
+                        result = { success: false, message: clean || `Server returned status ${res.status}` };
+                    }
 
                     if (res.ok && result.success) {
                         showToast('Gemini root-cause analysis completed!', 'success');

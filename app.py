@@ -62,6 +62,11 @@ def create_app(config_name: str = "default") -> Flask:
     # Error handlers
     @app.errorhandler(404)
     def page_not_found(e):
+        if request.path.startswith(("/api/", "/upload")):
+            return jsonify({
+                "success": False,
+                "message": "Endpoint not found.",
+            }), 404
         return render_template("base.html", error_404=True), 404
 
     @app.errorhandler(413)
@@ -82,8 +87,17 @@ def create_app(config_name: str = "default") -> Flask:
     def internal_server_error(e):
         return jsonify({
             "success": False,
-            "message": "Internal server error occurred.",
+            "message": "Internal server error occurred. Please verify your log dataset schema.",
         }), 500
+
+    @app.errorhandler(Exception)
+    def handle_unexpected_exception(e):
+        if request.path.startswith(("/api/", "/upload")):
+            return jsonify({
+                "success": False,
+                "message": f"Server processing error: {str(e)}",
+            }), 500
+        return jsonify({"success": False, "message": "An unexpected server error occurred."}), 500
 
     # Custom CLI Commands
     @app.cli.command("init-db")
