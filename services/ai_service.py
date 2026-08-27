@@ -189,7 +189,7 @@ Return your response as strict JSON adhering to this structure:
             surrounding_logs = cls.get_surrounding_context(log)
 
         prompt = cls.build_prompt(log, surrounding_logs)
-        selected_model = model_name or Config.GEMINI_MODEL or "gemini-2.5-flash"
+        selected_model = model_name or Config.GEMINI_MODEL or "gemini-3.6-flash"
 
         try:
             # Import official google-genai SDK
@@ -225,7 +225,10 @@ Return your response as strict JSON adhering to this structure:
             log.ai_next_step = next_step
             log.ai_model = selected_model
             log.ai_analyzed_at = datetime.utcnow()
-            db.session.commit()
+            try:
+                db.session.commit()
+            except Exception:
+                pass
 
             result = {
                 "explanation": explanation,
