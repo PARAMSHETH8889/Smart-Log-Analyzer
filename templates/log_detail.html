@@ -3,15 +3,15 @@
 {% block title %}Log #{{ log.id }} Details - Smart Log Analyzer{% endblock %}
 
 {% block header_title %}
-<div class="d-flex align-items-center gap-2">
+<div class="d-flex align-items-center gap-3">
     <a href="{{ url_for('logs.logs_view') }}" class="btn btn-sm btn-outline-secondary">
         <i class="bi bi-arrow-left"></i>
     </a>
     <h4 class="mb-0">Log Inspection #{{ log.id }}</h4>
     {% if log.anomaly %}
-        <span class="badge bg-danger">ANOMALY DETECTED</span>
+        <span class="badge badge-anomaly">ANOMALY DETECTED</span>
     {% else %}
-        <span class="badge bg-success">NORMAL LOG</span>
+        <span class="badge bg-success-subtle text-success border border-success-subtle">NORMAL LOG</span>
     {% endif %}
 </div>
 {% endblock %}
@@ -24,7 +24,7 @@
             <!-- Card 1: Core Log Metadata -->
             <div class="card mb-4">
                 <div class="card-header d-flex justify-content-between align-items-center">
-                    <h6 class="mb-0 fw-semibold">
+                    <h6 class="mb-0 fw-bold">
                         <i class="bi bi-file-earmark-code text-primary me-2"></i>Log Record Metadata
                     </h6>
                     <button class="btn btn-sm btn-outline-danger" id="btnDeleteCurrentLog" data-log-id="{{ log.id }}">
@@ -59,17 +59,17 @@
                                 {% elif log.severity == 'ERROR' %}
                                     <span class="badge bg-danger">ERROR</span>
                                 {% elif log.severity == 'WARNING' %}
-                                    <span class="badge bg-warning text-dark">WARNING</span>
+                                    <span class="badge bg-warning-subtle text-warning border">WARNING</span>
                                 {% else %}
-                                    <span class="badge bg-success">INFO</span>
+                                    <span class="badge bg-success-subtle text-success border">INFO</span>
                                 {% endif %}
                             </div>
                         </div>
                         <div class="col-sm-6 col-md-4">
                             <span class="detail-label">HTTP Status Code</span>
-                            <div class="detail-value">
+                            <div class="detail-value font-monospace">
                                 {% if log.status_code %}
-                                    <span class="badge {% if log.status_code >= 500 %}bg-danger{% elif log.status_code >= 400 %}bg-warning text-dark{% else %}bg-success{% endif %}">
+                                    <span class="badge {% if log.status_code >= 500 %}bg-danger{% elif log.status_code >= 400 %}bg-warning-subtle text-warning border{% else %}bg-success-subtle text-success border{% endif %}">
                                         {{ log.status_code }}
                                     </span>
                                 {% else %}
@@ -102,7 +102,7 @@
             <!-- Card 2: Deterministic Anomaly Detection Breakdown -->
             <div class="card mb-4 border-start border-4 {% if log.anomaly %}border-danger{% else %}border-success{% endif %}">
                 <div class="card-header d-flex justify-content-between align-items-center">
-                    <h6 class="mb-0 fw-semibold">
+                    <h6 class="mb-0 fw-bold">
                         <i class="bi bi-cpu text-primary me-2"></i>Deterministic Anomaly Detection (Non-AI)
                     </h6>
                     <span class="badge bg-info-subtle text-info border border-info-subtle">
@@ -112,7 +112,7 @@
                 <div class="card-body">
                     <div class="row align-items-center mb-3">
                         <div class="col-sm-4 text-center border-end">
-                            <span class="text-muted small">ANOMALY SCORE</span>
+                            <span class="text-muted small fw-bold">ANOMALY SCORE</span>
                             <h2 class="display-6 fw-bold mb-0 {% if log.anomaly %}text-danger{% else %}text-success{% endif %}">
                                 {{ "%.1f"|format(log.anomaly_score) }}<span class="fs-6 text-muted">/100</span>
                             </h2>
@@ -124,8 +124,8 @@
                                 <span>Threshold (50)</span>
                                 <span>Critical (100)</span>
                             </div>
-                            <div class="progress" style="height: 12px;">
-                                <div class="progress-bar {% if log.anomaly_score >= 70 %}bg-danger{% elif log.anomaly_score >= 50 %}bg-warning text-dark{% else %}bg-success{% endif %}" 
+                            <div class="progress" style="height: 12px; background-color: var(--border-color);">
+                                <div class="progress-bar {% if log.anomaly_score >= 70 %}bg-danger{% elif log.anomaly_score >= 50 %}bg-warning{% else %}bg-success{% endif %}" 
                                      role="progressbar" 
                                      style="width: {{ log.anomaly_score }}%;" 
                                      aria-valuenow="{{ log.anomaly_score }}" 
@@ -134,13 +134,13 @@
                                 </div>
                             </div>
                             <div class="mt-2 small text-muted">
-                                Status: <strong>{% if log.anomaly %}FLAGGED AS ANOMALOUS{% else %}WITHIN NORMAL BOUNDS{% endif %}</strong>
+                                Status: <strong class="text-body">{% if log.anomaly %}FLAGGED AS ANOMALOUS{% else %}WITHIN NORMAL BOUNDS{% endif %}</strong>
                             </div>
                         </div>
                     </div>
 
-                    <div class="p-3 bg-body-tertiary rounded">
-                        <div class="fw-semibold small text-muted mb-1">DETECTION REASONING & SIGNALS:</div>
+                    <div class="p-3 rounded" style="background-color: var(--table-header-bg); border: 1px solid var(--border-color);">
+                        <div class="fw-bold small text-muted mb-1">DETECTION REASONING & SIGNALS:</div>
                         <p class="mb-0 text-body font-monospace small">
                             {{ log.anomaly_reason or 'No anomaly signals triggered. Normal log behavior.' }}
                         </p>
@@ -151,7 +151,7 @@
             <!-- Card 3: Surrounding Log Timeline Context -->
             <div class="card">
                 <div class="card-header">
-                    <h6 class="mb-0 fw-semibold">
+                    <h6 class="mb-0 fw-bold">
                         <i class="bi bi-clock-history text-primary me-2"></i>Surrounding Event Context Timeline
                     </h6>
                     <small class="text-muted">Temporal sequence from the same service/IP</small>
@@ -166,12 +166,12 @@
                                         {% if ctx.id == log.id %}
                                             <span class="badge bg-danger">CURRENT ANOMALY</span>
                                         {% else %}
-                                            <span class="badge bg-secondary-subtle text-body">{{ ctx.relative_position }}</span>
+                                            <span class="badge bg-secondary-subtle text-body border">{{ ctx.relative_position }}</span>
                                         {% endif %}
-                                        <span class="badge bg-light text-dark border">{{ ctx.severity }}</span>
+                                        <span class="badge bg-secondary-subtle text-body border">{{ ctx.severity }}</span>
                                     </div>
                                 </div>
-                                <div class="small font-monospace text-truncate mt-1">
+                                <div class="small font-monospace text-truncate mt-1 text-body">
                                     {{ ctx.source }}: {{ ctx.message }}
                                 </div>
                             </div>
@@ -185,11 +185,11 @@
 
         <!-- Right Column: Google Gemini AI Analysis Panel -->
         <div class="col-12 col-xl-5">
-            <div class="card ai-card sticky-top" style="top: 20px;">
+            <div class="card ai-card sticky-top" style="top: 90px;">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <div class="d-flex align-items-center gap-2">
                         <i class="bi bi-stars text-warning fs-5"></i>
-                        <h6 class="mb-0 fw-semibold">Gemini AI Root-Cause Analysis</h6>
+                        <h6 class="mb-0 fw-bold">Gemini AI Root-Cause Analysis</h6>
                     </div>
                     {% if log.ai_model %}
                         <span class="badge bg-primary-subtle text-primary border">{{ log.ai_model }}</span>
@@ -205,8 +205,8 @@
                     {% if not log.anomaly %}
                         <div class="text-center py-5 text-muted">
                             <i class="bi bi-shield-check text-success display-4 mb-2"></i>
-                            <h6>No Anomaly Detected</h6>
-                            <p class="small">AI analysis is strictly reserved for logs detected as anomalies by our deterministic algorithm.</p>
+                            <h6 class="text-body">No Anomaly Detected</h6>
+                            <p class="small text-muted">AI analysis is strictly reserved for logs detected as anomalies by our deterministic algorithm.</p>
                         </div>
                     {% else %}
                         <!-- AI Action Controls -->

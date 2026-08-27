@@ -31,13 +31,13 @@ window.LogApp = (function () {
     // 1. Theme Manager (Light / Dark Mode)
     // =========================================================================
     function initTheme() {
-        const savedTheme = localStorage.getItem('logapp_theme') || 'light';
+        const savedTheme = localStorage.getItem('logapp_theme') || 'dark';
         applyTheme(savedTheme);
 
         const toggleBtn = document.getElementById('themeToggleBtn');
         if (toggleBtn) {
             toggleBtn.addEventListener('click', () => {
-                const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
+                const currentTheme = document.documentElement.getAttribute('data-theme') || 'dark';
                 const nextTheme = currentTheme === 'light' ? 'dark' : 'light';
                 applyTheme(nextTheme);
             });
@@ -48,57 +48,68 @@ window.LogApp = (function () {
         document.documentElement.setAttribute('data-theme', theme);
         localStorage.setItem('logapp_theme', theme);
 
-        const lightIcon = document.getElementById('themeIconLight');
-        const darkIcon = document.getElementById('themeIconDark');
         const toggleBtn = document.getElementById('themeToggleBtn');
-
-        if (lightIcon && darkIcon) {
-            if (theme === 'dark') {
-                lightIcon.classList.add('d-none');
-                darkIcon.classList.remove('d-none');
-                if (toggleBtn) toggleBtn.setAttribute('title', 'Switch to Light Mode');
-            } else {
-                lightIcon.classList.remove('d-none');
-                darkIcon.classList.add('d-none');
-                if (toggleBtn) toggleBtn.setAttribute('title', 'Switch to Dark Mode');
-            }
+        if (toggleBtn) {
+            toggleBtn.setAttribute('title', theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode');
         }
 
-        // Update charts with theme colors if active
+        // Update charts with high-contrast theme colors
         updateChartsTheme(theme);
     }
 
     function getThemeColors() {
         const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
         return {
-            textColor: isDark ? '#9ca3af' : '#64748b',
-            gridColor: isDark ? '#1f2937' : '#f1f5f9',
-            borderColor: isDark ? '#374151' : '#e2e8f0',
-            primary: isDark ? '#3b82f6' : '#2563eb',
+            isDark: isDark,
+            textColor: isDark ? '#cbd5e1' : '#334155',
+            headingColor: isDark ? '#f8fafc' : '#0f172a',
+            gridColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)',
+            borderColor: isDark ? '#1e293b' : '#e2e8f0',
+            primary: isDark ? '#60a5fa' : '#3b82f6',
             danger: isDark ? '#f87171' : '#ef4444',
             warning: isDark ? '#fbbf24' : '#f59e0b',
             success: isDark ? '#34d399' : '#10b981',
-            info: isDark ? '#22d3ee' : '#06b6d4',
-            tooltipBg: isDark ? '#111827' : '#ffffff',
-            tooltipText: isDark ? '#f3f4f6' : '#0f172a',
+            info: isDark ? '#38bdf8' : '#0284c7',
+            tooltipBg: isDark ? '#0f182c' : '#ffffff',
+            tooltipText: isDark ? '#f8fafc' : '#0f172a',
         };
     }
 
     function updateChartsTheme() {
         const colors = getThemeColors();
         if (timelineChart) {
-            timelineChart.options.scales.x.ticks.color = colors.textColor;
-            timelineChart.options.scales.y.ticks.color = colors.textColor;
-            timelineChart.options.scales.x.grid.color = colors.gridColor;
-            timelineChart.options.scales.y.grid.color = colors.gridColor;
+            if (timelineChart.options.scales?.x) {
+                timelineChart.options.scales.x.ticks.color = colors.textColor;
+                timelineChart.options.scales.x.grid.color = colors.gridColor;
+            }
+            if (timelineChart.options.scales?.y) {
+                timelineChart.options.scales.y.ticks.color = colors.textColor;
+                timelineChart.options.scales.y.grid.color = colors.gridColor;
+            }
+            if (timelineChart.options.plugins?.legend?.labels) {
+                timelineChart.options.plugins.legend.labels.color = colors.headingColor;
+            }
             timelineChart.update();
         }
         if (sourceChart) {
-            sourceChart.options.scales.x.ticks.color = colors.textColor;
-            sourceChart.options.scales.y.ticks.color = colors.textColor;
-            sourceChart.options.scales.x.grid.color = colors.gridColor;
-            sourceChart.options.scales.y.grid.color = colors.gridColor;
+            if (sourceChart.options.scales?.x) {
+                sourceChart.options.scales.x.ticks.color = colors.textColor;
+                sourceChart.options.scales.x.grid.color = colors.gridColor;
+            }
+            if (sourceChart.options.scales?.y) {
+                sourceChart.options.scales.y.ticks.color = colors.textColor;
+                sourceChart.options.scales.y.grid.color = colors.gridColor;
+            }
             sourceChart.update();
+        }
+        if (severityChart) {
+            if (severityChart.options.plugins?.legend?.labels) {
+                severityChart.options.plugins.legend.labels.color = colors.headingColor;
+            }
+            if (severityChart.data.datasets && severityChart.data.datasets[0]) {
+                severityChart.data.datasets[0].borderColor = colors.borderColor;
+            }
+            severityChart.update();
         }
     }
 
