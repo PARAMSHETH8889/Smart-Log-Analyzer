@@ -59,9 +59,22 @@ class LogParser:
                     )
                 ]
 
+            # Remove UTF-8 BOM if present
+            if content.startswith("\ufeff"):
+                content = content[1:]
+
+            # Sniff delimiter (comma, tab, semicolon, pipe)
+            sample = content[:4096]
+            try:
+                sniffer = csv.Sniffer()
+                dialect = sniffer.sniff(sample, delimiters=",\t;|")
+                delimiter = dialect.delimiter
+            except Exception:
+                delimiter = ","
+
             # Read with csv.DictReader for robust row-by-row parsing
             csv_file = io.StringIO(content)
-            reader = csv.DictReader(csv_file)
+            reader = csv.DictReader(csv_file, delimiter=delimiter)
 
             if not reader.fieldnames:
                 return [], [
@@ -125,7 +138,7 @@ class LogParser:
     ) -> List[Log]:
         """
         Persist validated log records into SQLite database.
-        Optionally executes non-AI anomaly detector on new logs.
+        Executes fast, deterministic anomaly detector on the incoming batch.
         """
         if not valid_records:
             return []
@@ -148,15 +161,14 @@ class LogParser:
         db.session.add_all(log_objects)
         db.session.commit()
 
-        if run_detection:
+        if run_detection and log_objects:
             if detector_service is None:
                 from services.anomaly_detector import AnomalyDetector
                 detector_service = AnomalyDetector
 
-            # Run detection on all database records to maintain full dataset temporal context
-            all_logs = Log.query.all()
+            # Run lightning-fast detection directly on the newly ingested batch
             detector = detector_service()
-            detector.detect_batch(all_logs)
+            detector.detect_batch(log_objects)
             db.session.commit()
 
         return log_objects

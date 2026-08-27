@@ -94,13 +94,13 @@ def test_empty_dataset_and_file():
 
 
 def test_duplicate_records_handling():
-    """Test that duplicate log rows are identified and reported in validation results."""
+    """Test that duplicate log rows are identified and preserved in validation results."""
     csv_duplicates = """timestamp,source,event_type,severity,status_code,message
 2026-08-26 10:00:00,api-01,LOGIN,INFO,200,User logged in
 2026-08-26 10:00:00,api-01,LOGIN,INFO,200,User logged in
 2026-08-26 10:00:05,api-01,LOGIN,INFO,200,User logged in second time
 """
     result = LogParser.process_and_validate(csv_duplicates)
-    assert len(result.valid_records) == 2
+    assert len(result.valid_records) == 3
     assert result.duplicate_count == 1
-    assert result.rejected_count == 1
+    assert result.total_processed == 3

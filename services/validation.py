@@ -355,18 +355,12 @@ class LogValidator:
             status_code,
             ip_address,
         )
+        is_duplicate = False
         if seen_keys is not None:
             if dup_key in seen_keys:
-                errors.append(
-                    ValidationError(
-                        row_number=row_number,
-                        field="duplicate",
-                        message="Duplicate log entry detected in dataset.",
-                        raw_data=raw_row,
-                    )
-                )
-                return None, errors
-            seen_keys.add(dup_key)
+                is_duplicate = True
+            else:
+                seen_keys.add(dup_key)
 
         cleaned_record = {
             "timestamp": parsed_ts,
@@ -377,6 +371,7 @@ class LogValidator:
             "status_code": status_code,
             "endpoint": endpoint,
             "message": message,
+            "is_duplicate": is_duplicate,
         }
 
         return cleaned_record, []
@@ -421,11 +416,10 @@ class LogValidator:
                 row, row_number=idx, seen_keys=seen_keys
             )
             if row_errors:
-                for err in row_errors:
-                    if err.field == "duplicate":
-                        duplicate_count += 1
                 errors.extend(row_errors)
             elif cleaned:
+                if cleaned.get("is_duplicate"):
+                    duplicate_count += 1
                 valid_records.append(cleaned)
 
         return ValidationResult(
