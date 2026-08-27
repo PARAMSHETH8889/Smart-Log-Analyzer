@@ -185,11 +185,11 @@ Return your response as strict JSON adhering to this structure:
                 "Google Gemini API key is missing. Please set GEMINI_API_KEY in your .env file.",
             )
 
-        if surrounding_logs is None:
-            surrounding_logs = cls.get_surrounding_context(log)
-
         prompt = cls.build_prompt(log, surrounding_logs)
-        selected_model = model_name or Config.GEMINI_MODEL or "gemini-3.6-flash"
+        primary_model = model_name or Config.GEMINI_MODEL or "gemini-3.5-flash-lite"
+        candidate_models = [primary_model, "gemini-3.5-flash-lite", "gemini-3.6-flash"]
+        # Deduplicate preserving order
+        candidate_models = list(dict.fromkeys(candidate_models))
 
         try:
             # Import official google-genai SDK
@@ -198,15 +198,28 @@ Return your response as strict JSON adhering to this structure:
 
             client = genai.Client(api_key=api_key)
 
-            response = client.models.generate_content(
-                model=selected_model,
-                contents=prompt,
-                config=types.GenerateContentConfig(
-                    response_mime_type="application/json",
-                    response_schema=AnomalyExplanationSchema,
-                    temperature=0.2,
-                ),
-            )
+            response = None
+            used_model = primary_model
+            last_err = None
+
+            for model in candidate_models:
+                try:
+                    response = client.models.generate_content(
+                        model=model,
+                        contents=prompt,
+                        config=types.GenerateContentConfig(
+                            response_mime_type="application/json",
+                            temperature=0.2,
+                        ),
+                    )
+                    used_model = model
+                    break
+                except Exception as ex:
+                    last_err = ex
+                    continue
+
+            if response is None:
+                raise last_err or RuntimeError("Gemini model generation failed.")
 
             raw_text = (response.text or "{}").strip()
             if raw_text.startswith("```json"):
@@ -231,7 +244,7 @@ Return your response as strict JSON adhering to this structure:
             log.ai_explanation = explanation
             log.ai_root_cause = root_cause
             log.ai_next_step = next_step
-            log.ai_model = selected_model
+            log.ai_model = used_model
             log.ai_analyzed_at = datetime.utcnow()
             try:
                 db.session.commit()
@@ -242,7 +255,7 @@ Return your response as strict JSON adhering to this structure:
                 "explanation": explanation,
                 "likely_root_cause": root_cause,
                 "recommended_next_step": next_step,
-                "model": selected_model,
+                "model": used_model,
                 "analyzed_at": log.ai_analyzed_at.strftime("%Y-%m-%d %H:%M:%S"),
             }
             return True, result, None

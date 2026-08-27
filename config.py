@@ -25,7 +25,7 @@ class Config:
 
     # Google Gemini AI configuration
     GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
-    GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.6-flash")
+    GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.5-flash-lite")
 
     # Anomaly Detection Settings
     ANOMALY_THRESHOLD = int(os.getenv("ANOMALY_THRESHOLD", "50"))
