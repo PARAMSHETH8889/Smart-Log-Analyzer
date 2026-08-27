@@ -27,6 +27,7 @@ from services.anomaly_detector import AnomalyDetector
 from services.ai_service import GeminiAIService
 from services.supabase_service import SupabaseService
 from services.data_cleaner import DataCleaner
+from services.live_logger import LiveLogService
 from config import Config
 
 # Whitelisted columns for dynamic sorting (prevents SQL/ORM injection)
@@ -539,3 +540,28 @@ def sync_supabase_endpoint():
     sync_result = SupabaseService.clean_and_sync_all_logs()
     status_code = 200 if sync_result.get("success") else 500
     return jsonify(sync_result), status_code
+
+
+@logs_bp.route("/live")
+def live_logs_view():
+    """
+    Render real-time Live Log Monitor UI.
+    """
+    local_ip = LiveLogService.get_local_ip()
+    return render_template("live.html", local_ip=local_ip)
+
+
+@logs_bp.route("/api/live/capture", methods=["POST"])
+def capture_live_logs_api():
+    """
+    Capture live system/event logs directly from the computer, run anomaly detection,
+    and persist them to the database.
+    """
+    data = request.get_json(silent=True) or {}
+    count = int(data.get("count", 5))
+    count = max(1, min(count, 30))
+    channel = data.get("channel", "Application")
+
+    result = LiveLogService.capture_and_ingest_live_logs(count=count, channel=channel)
+    status_code = 200 if result.get("success") else 500
+    return jsonify(result), status_code

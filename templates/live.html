@@ -1,0 +1,151 @@
+{% extends "base.html" %}
+
+{% block title %}Live Computer Log Stream - Smart Log Analyzer{% endblock %}
+
+{% block header_title %}
+<div class="d-flex align-items-center gap-2">
+    <h4 class="mb-0">Live Computer Log Monitor</h4>
+    <span class="badge bg-danger d-inline-flex align-items-center gap-1" id="liveStatusBadge">
+        <span class="spinner-grow spinner-grow-sm text-light" style="width: 0.5rem; height: 0.5rem;" role="status"></span>
+        LIVE STREAM
+    </span>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="live-logs-container">
+    <!-- Stream Metrics & Host Status Banner -->
+    <div class="row g-3 mb-4">
+        <div class="col-12 col-md-3">
+            <div class="card metric-card border-start border-4 border-primary shadow-sm h-100">
+                <div class="card-body">
+                    <span class="metric-label">LIVE CAPTURED</span>
+                    <h2 class="metric-value mb-0 text-primary" id="liveCapturedCount">0</h2>
+                    <span class="metric-meta text-muted small">from host computer</span>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-md-3">
+            <div class="card metric-card border-start border-4 border-danger shadow-sm h-100">
+                <div class="card-body">
+                    <span class="metric-label">LIVE ANOMALIES</span>
+                    <h2 class="metric-value mb-0 text-danger" id="liveAnomaliesCount">0</h2>
+                    <span class="metric-meta text-muted small">threats / anomalies flagged</span>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-md-3">
+            <div class="card metric-card border-start border-4 border-success shadow-sm h-100">
+                <div class="card-body">
+                    <span class="metric-label">HOST SYSTEM</span>
+                    <h5 class="fw-bold mb-0 text-truncate" id="hostIpText">{{ local_ip }}</h5>
+                    <span class="metric-meta text-muted small">Local Machine Interface</span>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-md-3">
+            <div class="card metric-card border-start border-4 border-info shadow-sm h-100">
+                <div class="card-body">
+                    <span class="metric-label">STREAM STATUS</span>
+                    <h5 class="fw-bold mb-0 text-success" id="streamStatusText">Active Streaming</h5>
+                    <span class="metric-meta text-muted small" id="lastCaptureTime">Waiting for data...</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Live Controls Toolbar Card -->
+    <div class="card filter-card mb-4 shadow-sm">
+        <div class="card-body py-3">
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+                <div class="d-flex align-items-center gap-2 flex-wrap">
+                    <button type="button" class="btn btn-primary btn-sm d-flex align-items-center gap-2" id="btnCaptureNow">
+                        <i class="bi bi-lightning-charge-fill"></i>
+                        <span>Capture from PC Now</span>
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary btn-sm" id="btnToggleAutoStream">
+                        <i class="bi bi-pause-fill me-1" id="autoStreamIcon"></i>
+                        <span id="autoStreamText">Pause Auto-Stream</span>
+                    </button>
+                    <div class="d-flex align-items-center gap-1 ms-2">
+                        <span class="small text-muted">Channel:</span>
+                        <select id="selectLiveChannel" class="form-select form-select-sm" style="width: 140px;">
+                            <option value="Application" selected>Application</option>
+                            <option value="System">System</option>
+                            <option value="Security">Security</option>
+                        </select>
+                    </div>
+                    <div class="d-flex align-items-center gap-1 ms-2">
+                        <span class="small text-muted">Interval:</span>
+                        <select id="selectStreamInterval" class="form-select form-select-sm" style="width: 100px;">
+                            <option value="2000">2 sec</option>
+                            <option value="3000" selected>3 sec</option>
+                            <option value="5000">5 sec</option>
+                            <option value="10000">10 sec</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="d-flex align-items-center gap-2">
+                    <button type="button" class="btn btn-outline-primary btn-sm" id="btnLiveSyncSupabase" title="Copy all captured live logs to Supabase Cloud">
+                        <i class="bi bi-cloud-arrow-up me-1"></i>Sync to Supabase
+                    </button>
+                    <button type="button" class="btn btn-outline-danger btn-sm" id="btnClearLiveConsole" title="Clear console buffer">
+                        <i class="bi bi-eraser me-1"></i>Clear Display
+                    </button>
+                    <a href="{{ url_for('logs.logs_view') }}" class="btn btn-outline-secondary btn-sm">
+                        <i class="bi bi-table me-1"></i>Log Explorer
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Live Stream Console & Table Card -->
+    <div class="card table-card shadow-sm">
+        <div class="card-header bg-body-tertiary d-flex justify-content-between align-items-center py-2">
+            <span class="fw-semibold small text-uppercase">
+                <i class="bi bi-terminal me-2 text-primary"></i>Real-Time Computer Event Stream
+            </span>
+            <div class="form-check form-switch mb-0 small">
+                <input class="form-check-input" type="checkbox" id="chkAutoScroll" checked>
+                <label class="form-check-label text-muted" for="chkAutoScroll">Auto-scroll</label>
+            </div>
+        </div>
+        <div class="table-responsive" style="max-height: 520px; overflow-y: auto;" id="liveTableScrollContainer">
+            <table class="table table-hover align-middle mb-0" id="liveLogsTable">
+                <thead>
+                    <tr>
+                        <th style="width: 150px;">Timestamp</th>
+                        <th style="width: 150px;">Source / Host</th>
+                        <th style="width: 130px;">Event Type</th>
+                        <th style="width: 90px;">Severity</th>
+                        <th style="width: 70px;">Status</th>
+                        <th style="width: 110px;">Anomaly</th>
+                        <th style="min-width: 250px;">Live System Message / Description</th>
+                        <th style="width: 90px;" class="text-end">Action</th>
+                    </tr>
+                </thead>
+                <tbody id="liveLogsTableBody">
+                    <tr id="liveEmptyRow">
+                        <td colspan="8" class="text-center py-5 text-muted">
+                            <div class="spinner-border spinner-border-sm text-primary me-2"></div>
+                            Starting live stream connection from computer...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        if (window.LogApp && window.LogApp.initLiveMonitor) {
+            window.LogApp.initLiveMonitor();
+        }
+    });
+</script>
+{% endblock %}

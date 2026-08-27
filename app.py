@@ -5,7 +5,7 @@ Smart Log Analyzer & Anomaly Detector - Application Entry Point.
 import os
 from pathlib import Path
 import click
-from flask import Flask, render_template, jsonify
+from flask import Flask, render_template, request, jsonify
 
 from config import config_by_name, Config
 from models import db

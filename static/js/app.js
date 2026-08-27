@@ -1275,6 +1275,219 @@ window.LogApp = (function () {
         }
     }
 
+    // =========================================================================
+    // 8. Live Computer Log Monitor
+    // =========================================================================
+    function initLiveMonitor() {
+        let isStreaming = true;
+        let streamTimer = null;
+        let capturedCount = 0;
+        let anomaliesCount = 0;
+        let seenIds = new Set();
+
+        const tableBody = document.getElementById('liveLogsTableBody');
+        const emptyRow = document.getElementById('liveEmptyRow');
+        const capturedMetric = document.getElementById('liveCapturedCount');
+        const anomaliesMetric = document.getElementById('liveAnomaliesCount');
+        const lastCaptureText = document.getElementById('lastCaptureTime');
+        const statusText = document.getElementById('streamStatusText');
+        const statusBadge = document.getElementById('liveStatusBadge');
+        const captureNowBtn = document.getElementById('btnCaptureNow');
+        const toggleStreamBtn = document.getElementById('btnToggleAutoStream');
+        const streamIcon = document.getElementById('autoStreamIcon');
+        const streamText = document.getElementById('autoStreamText');
+        const channelSelect = document.getElementById('selectLiveChannel');
+        const intervalSelect = document.getElementById('selectStreamInterval');
+        const clearConsoleBtn = document.getElementById('btnClearLiveConsole');
+        const syncSupabaseBtn = document.getElementById('btnLiveSyncSupabase');
+        const scrollContainer = document.getElementById('liveTableScrollContainer');
+        const autoScrollChk = document.getElementById('chkAutoScroll');
+
+        async function captureEvents() {
+            const channel = channelSelect ? channelSelect.value : 'Application';
+            try {
+                const res = await fetch('/api/live/capture', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ count: 4, channel: channel })
+                });
+                const resText = await res.text();
+                let data;
+                try { data = JSON.parse(resText); } catch(e) { data = { success: false }; }
+
+                if (data.success && data.items && data.items.length > 0) {
+                    if (emptyRow && emptyRow.parentNode) {
+                        emptyRow.remove();
+                    }
+
+                    data.items.forEach(log => {
+                        if (seenIds.has(log.id)) return;
+                        seenIds.add(log.id);
+
+                        capturedCount++;
+                        if (log.anomaly) anomaliesCount++;
+
+                        const rowClass = log.anomaly ? 'row-anomaly table-danger' : '';
+                        const sevBadge = getSeverityBadge(log.severity);
+                        const statusBadge = log.status_code ? `<span class="badge ${log.status_code >= 500 ? 'bg-danger' : log.status_code >= 400 ? 'bg-warning text-dark' : 'bg-success'}">${log.status_code}</span>` : '<span class="text-muted">-</span>';
+                        const anomBadge = log.anomaly 
+                            ? '<span class="badge bg-danger"><i class="bi bi-exclamation-triangle-fill me-1"></i>ANOMALY</span>' 
+                            : '<span class="badge bg-success-subtle text-success border">NORMAL</span>';
+
+                        const tr = document.createElement('tr');
+                        tr.className = rowClass;
+                        tr.innerHTML = `
+                            <td class="font-monospace small text-nowrap">${log.timestamp}</td>
+                            <td><span class="badge bg-secondary-subtle text-body border">${log.source}</span></td>
+                            <td><span class="badge bg-primary-subtle text-primary border">${log.event_type}</span></td>
+                            <td>${sevBadge}</td>
+                            <td>${statusBadge}</td>
+                            <td>${anomBadge}</td>
+                            <td>
+                                <div class="text-truncate font-monospace small" style="max-width: 380px;" title="${log.message}">
+                                    ${log.message}
+                                </div>
+                                ${log.anomaly ? `<div class="small text-danger text-truncate" style="max-width: 380px;"><i class="bi bi-info-circle me-1"></i>${log.anomaly_reason || ''}</div>` : ''}
+                            </td>
+                            <td class="text-end text-nowrap">
+                                <a href="/logs/${log.id}" class="btn btn-xs btn-outline-primary btn-sm" title="Inspect Log & AI Explanation">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                            </td>
+                        `;
+
+                        if (tableBody.firstChild) {
+                            tableBody.insertBefore(tr, tableBody.firstChild);
+                        } else {
+                            tableBody.appendChild(tr);
+                        }
+                    });
+
+                    // Keep table buffer under 200 items
+                    while (tableBody.children.length > 200) {
+                        tableBody.removeChild(tableBody.lastChild);
+                    }
+
+                    if (capturedMetric) capturedMetric.textContent = capturedCount;
+                    if (anomaliesMetric) anomaliesMetric.textContent = anomaliesCount;
+                    if (lastCaptureText) lastCaptureText.textContent = `Last capture: ${new Date().toLocaleTimeString()}`;
+
+                    if (autoScrollChk && autoScrollChk.checked && scrollContainer) {
+                        scrollContainer.scrollTop = 0;
+                    }
+                }
+            } catch (err) {
+                console.error('[LiveStream Error]', err);
+            }
+        }
+
+        function startStream() {
+            stopStream();
+            const interval = parseInt(intervalSelect ? intervalSelect.value : 3000) || 3000;
+            isStreaming = true;
+            if (statusText) {
+                statusText.textContent = 'Active Streaming';
+                statusText.className = 'fw-bold mb-0 text-success';
+            }
+            if (statusBadge) {
+                statusBadge.className = 'badge bg-danger d-inline-flex align-items-center gap-1';
+                statusBadge.innerHTML = '<span class="spinner-grow spinner-grow-sm text-light" style="width: 0.5rem; height: 0.5rem;" role="status"></span> LIVE STREAM';
+            }
+            if (streamIcon) streamIcon.className = 'bi bi-pause-fill me-1';
+            if (streamText) streamText.textContent = 'Pause Auto-Stream';
+            
+            captureEvents();
+            streamTimer = setInterval(captureEvents, interval);
+        }
+
+        function stopStream() {
+            if (streamTimer) {
+                clearInterval(streamTimer);
+                streamTimer = null;
+            }
+            isStreaming = false;
+            if (statusText) {
+                statusText.textContent = 'Stream Paused';
+                statusText.className = 'fw-bold mb-0 text-secondary';
+            }
+            if (statusBadge) {
+                statusBadge.className = 'badge bg-secondary d-inline-flex align-items-center gap-1';
+                statusBadge.innerHTML = '<i class="bi bi-pause-circle"></i> PAUSED';
+            }
+            if (streamIcon) streamIcon.className = 'bi bi-play-fill me-1';
+            if (streamText) streamText.textContent = 'Resume Auto-Stream';
+        }
+
+        if (captureNowBtn) {
+            captureNowBtn.addEventListener('click', () => {
+                captureEvents();
+                showToast('Capturing live log events from host PC...', 'info');
+            });
+        }
+
+        if (toggleStreamBtn) {
+            toggleStreamBtn.addEventListener('click', () => {
+                if (isStreaming) {
+                    stopStream();
+                } else {
+                    startStream();
+                }
+            });
+        }
+
+        if (intervalSelect) {
+            intervalSelect.addEventListener('change', () => {
+                if (isStreaming) {
+                    startStream();
+                }
+            });
+        }
+
+        if (clearConsoleBtn) {
+            clearConsoleBtn.addEventListener('click', () => {
+                tableBody.innerHTML = `
+                    <tr id="liveEmptyRow">
+                        <td colspan="8" class="text-center py-5 text-muted">
+                            <i class="bi bi-terminal display-6 d-block mb-2"></i>
+                            Display cleared. Listening for incoming live computer events...
+                        </td>
+                    </tr>
+                `;
+                capturedCount = 0;
+                anomaliesCount = 0;
+                seenIds.clear();
+                if (capturedMetric) capturedMetric.textContent = '0';
+                if (anomaliesMetric) anomaliesMetric.textContent = '0';
+            });
+        }
+
+        if (syncSupabaseBtn) {
+            syncSupabaseBtn.addEventListener('click', async () => {
+                syncSupabaseBtn.disabled = true;
+                const originalHtml = syncSupabaseBtn.innerHTML;
+                syncSupabaseBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Syncing...';
+                try {
+                    const res = await fetch('/api/dataset/sync-supabase', { method: 'POST' });
+                    const resText = await res.text();
+                    let data;
+                    try { data = JSON.parse(resText); } catch(e) { data = { success: false, message: resText.replace(/<[^>]+>/g, '').trim() }; }
+                    if (data.success) {
+                        showToast(data.message || 'Live logs synced to Supabase!', 'success');
+                    } else {
+                        showToast(data.message || data.error || 'Failed to sync live logs.', 'danger');
+                    }
+                } catch (err) {
+                    showToast('Network error while syncing.', 'danger');
+                } finally {
+                    syncSupabaseBtn.disabled = false;
+                    syncSupabaseBtn.innerHTML = originalHtml;
+                }
+            });
+        }
+
+        startStream();
+    }
+
     // Initialize core handlers on DOM ready
     document.addEventListener('DOMContentLoaded', () => {
         initTheme();
@@ -1287,6 +1500,7 @@ window.LogApp = (function () {
         initDashboard,
         initLogsExplorer,
         initLogDetail,
+        initLiveMonitor,
         showToast,
     };
 })();

@@ -36,9 +36,15 @@
                     <i class="bi bi-grid-1x2-fill"></i>
                     <span>Dashboard</span>
                 </a>
-                <a href="{{ url_for('logs.logs_view') }}" class="nav-link {% if request.endpoint and 'logs' in request.endpoint and request.endpoint != 'dashboard.dashboard_view' %}active{% endif %}">
+                <a href="{{ url_for('logs.logs_view') }}" class="nav-link {% if request.path.startswith('/logs') %}active{% endif %}">
                     <i class="bi bi-journal-code"></i>
                     <span>Log Explorer</span>
+                </a>
+
+                <a href="{{ url_for('logs.live_logs_view') }}" class="nav-link {% if request.path == '/live' %}active{% endif %}">
+                    <i class="bi bi-broadcast text-danger"></i>
+                    <span>Live Computer Logs</span>
+                    <span class="badge bg-danger ms-auto" style="font-size: 0.65rem;">LIVE</span>
                 </a>
 
                 <div class="nav-section-title">ACTIONS</div>
@@ -83,6 +89,12 @@
                 </div>
 
                 <div class="header-right">
+                    <!-- Live Stream Header Button -->
+                    <a href="{{ url_for('logs.live_logs_view') }}" class="btn btn-sm btn-outline-danger d-inline-flex align-items-center gap-2">
+                        <span class="spinner-grow spinner-grow-sm text-danger" style="width: 0.45rem; height: 0.45rem;"></span>
+                        <span>Live Logs</span>
+                    </a>
+
                     <!-- Quick Upload Button -->
                     <button class="btn btn-sm btn-primary d-none d-sm-inline-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#uploadModal">
                         <i class="bi bi-cloud-arrow-up"></i>
