@@ -16,8 +16,14 @@ class Config:
 
     SECRET_KEY = os.getenv("SECRET_KEY", "dev-smart-log-analyzer-secret-2026")
     
-    # SQLite Database URI
-    DB_PATH = BASE_DIR / "database" / "app.db"
+    # SQLite Database URI (uses /tmp on Vercel Serverless runtime)
+    if os.getenv("VERCEL") or os.getenv("AWS_LAMBDA_FUNCTION_NAME"):
+        DB_PATH = Path("/tmp") / "app.db"
+        SAMPLE_DATA_DIR = Path("/tmp") / "sample_data"
+    else:
+        DB_PATH = BASE_DIR / "database" / "app.db"
+        SAMPLE_DATA_DIR = BASE_DIR / "sample_data"
+
     SQLALCHEMY_DATABASE_URI = os.getenv(
         "DATABASE_URL", f"sqlite:///{DB_PATH.as_posix()}"
     )
