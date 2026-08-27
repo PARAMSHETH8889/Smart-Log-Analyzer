@@ -57,6 +57,11 @@ class Log(db.Model):
         nullable=False,
     )
 
+    def __init__(self, **kwargs):
+        if "uuid" not in kwargs or not kwargs["uuid"]:
+            kwargs["uuid"] = str(uuid.uuid4())
+        super().__init__(**kwargs)
+
     def to_dict(self) -> Dict[str, Any]:
         """Convert log model instance to Python dictionary."""
         return {
@@ -92,8 +97,9 @@ class Log(db.Model):
 
     def to_supabase_log(self) -> Dict[str, Any]:
         """Prepare log dictionary for Supabase `logs` table insertion."""
+        log_id = self.uuid or str(uuid.uuid4())
         return {
-            "id": self.uuid,
+            "id": log_id,
             "timestamp": self.timestamp.isoformat() if self.timestamp else None,
             "event_type": self.event_type,
             "severity": self.severity,
@@ -102,17 +108,18 @@ class Log(db.Model):
             "status_code": self.status_code,
             "message": self.message,
             "endpoint": self.endpoint,
-            "created_at": self.created_at.isoformat() if self.created_at else None,
-            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+            "created_at": (self.created_at or datetime.utcnow()).isoformat(),
+            "updated_at": (self.updated_at or datetime.utcnow()).isoformat(),
         }
 
     def to_supabase_anomaly(self) -> Optional[Dict[str, Any]]:
         """Prepare anomaly record for Supabase `anomalies` table."""
         if not self.anomaly:
             return None
+        log_id = self.uuid or str(uuid.uuid4())
         return {
             "id": str(uuid.uuid4()),
-            "log_id": self.uuid,
+            "log_id": log_id,
             "is_anomaly": True,
             "anomaly_score": float(round(self.anomaly_score, 2)),
             "reason": self.anomaly_reason
