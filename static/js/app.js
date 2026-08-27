@@ -242,6 +242,11 @@ window.LogApp = (function () {
             const formData = new FormData();
             formData.append('file', fileInput.files[0]);
 
+            const syncCheckbox = document.getElementById('chkUploadSyncSupabase');
+            if (syncCheckbox && syncCheckbox.checked) {
+                formData.append('sync_to_supabase', 'true');
+            }
+
             submitBtn.disabled = true;
             spinner.classList.remove('d-none');
             btnText.textContent = 'Processing...';
@@ -271,18 +276,27 @@ window.LogApp = (function () {
                     showToast(data.message, 'success');
                     uploadFeedback.className = 'alert alert-success mt-3 small';
                     uploadFeedback.innerHTML = `
-                        <strong><i class="bi bi-check-circle-fill me-1"></i>Ingestion Complete:</strong><br>
-                        • Processed: ${data.total_processed} rows<br>
-                        • Successfully Imported: ${data.imported_count} rows<br>
-                        • Anomalies Detected: ${data.anomalies_detected}<br>
-                        • Duplicates Skipped: ${data.duplicate_count || 0}<br>
-                        • Rejected: ${data.rejected_count} rows
+                        <div class="d-flex align-items-center justify-content-between mb-2">
+                            <strong><i class="bi bi-check-circle-fill me-1 text-success"></i>Ingestion Complete!</strong>
+                            <span class="badge bg-success">${data.imported_count} Records</span>
+                        </div>
+                        <ul class="mb-2 ps-3">
+                            <li>Processed: <strong>${data.total_processed}</strong> rows</li>
+                            <li>Imported: <strong>${data.imported_count}</strong> rows</li>
+                            <li>Anomalies Flagged: <strong>${data.anomalies_detected}</strong></li>
+                            <li>Duplicates Skipped: <strong>${data.duplicate_count || 0}</strong></li>
+                        </ul>
+                        <div class="d-flex gap-2 mt-2 pt-2 border-top">
+                            <button type="button" class="btn btn-sm btn-primary flex-fill" onclick="window.location.reload();">
+                                <i class="bi bi-table me-1"></i>View in Logs Table
+                            </button>
+                        </div>
                     `;
                     uploadFeedback.classList.remove('d-none');
 
                     // If errors occurred on some rows, display them
                     if (data.errors && data.errors.length > 0) {
-                        let errList = '<div class="mt-2 text-danger"><strong>Validation Notes:</strong><ul>';
+                        let errList = '<div class="mt-2 text-warning"><strong>Validation Notes:</strong><ul>';
                         data.errors.slice(0, 5).forEach(err => {
                             errList += `<li>Row ${err.row} [${err.field}]: ${err.message}</li>`;
                         });
@@ -295,7 +309,7 @@ window.LogApp = (function () {
                         const modal = bootstrap.Modal.getInstance(document.getElementById('uploadModal'));
                         if (modal) modal.hide();
                         window.location.reload();
-                    }, 2200);
+                    }, 2500);
 
                 } else {
                     uploadFeedback.className = 'alert alert-danger mt-3 small';
@@ -333,7 +347,9 @@ window.LogApp = (function () {
                 showToast('Running deterministic anomaly detection...', 'info');
                 try {
                     const res = await fetch('/api/detect', { method: 'POST' });
-                    const data = await res.json();
+                    const resText = await res.text();
+                    let data;
+                    try { data = JSON.parse(resText); } catch(e) { data = { success: false, message: resText.replace(/<[^>]+>/g, '').trim() }; }
                     if (data.success) {
                         showToast(data.message, 'success');
                         setTimeout(() => window.location.reload(), 1200);
@@ -351,12 +367,14 @@ window.LogApp = (function () {
             syncBtn.addEventListener('click', async (e) => {
                 e.preventDefault();
                 syncBtn.disabled = true;
-                showToast('Synchronizing with Supabase Cloud...', 'info');
+                showToast('Copying ALL records to Supabase Cloud...', 'info');
                 try {
                     const res = await fetch('/api/sync/supabase', { method: 'POST' });
-                    const data = await res.json();
+                    const resText = await res.text();
+                    let data;
+                    try { data = JSON.parse(resText); } catch(e) { data = { success: false, message: resText.replace(/<[^>]+>/g, '').trim() }; }
                     if (data.success) {
-                        showToast(data.message, 'success');
+                        showToast(data.message || 'All records successfully copied to Supabase!', 'success');
                     } else {
                         showToast(data.message || 'Supabase sync failed.', 'warning');
                     }
@@ -750,26 +768,54 @@ window.LogApp = (function () {
             });
         }
 
-        const cleanSyncBtn = document.getElementById('btnCleanSyncSupabase');
-        if (cleanSyncBtn) {
-            cleanSyncBtn.addEventListener('click', async () => {
-                cleanSyncBtn.disabled = true;
-                const originalHtml = cleanSyncBtn.innerHTML;
-                cleanSyncBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Cleaning & Syncing...';
+        const cleanDatasetBtn = document.getElementById('btnCleanDataset');
+        if (cleanDatasetBtn) {
+            cleanDatasetBtn.addEventListener('click', async () => {
+                cleanDatasetBtn.disabled = true;
+                const originalHtml = cleanDatasetBtn.innerHTML;
+                cleanDatasetBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Cleaning...';
                 try {
-                    const res = await fetch('/api/dataset/sync-supabase', { method: 'POST' });
-                    const data = await res.json();
+                    const res = await fetch('/api/dataset/clean', { method: 'POST' });
+                    const resText = await res.text();
+                    let data;
+                    try { data = JSON.parse(resText); } catch(e) { data = { success: false, message: resText.replace(/<[^>]+>/g, '').trim() }; }
                     if (data.success) {
-                        showToast(data.message || 'Dataset cleaned and synced to Supabase!', 'success');
+                        showToast(data.message || 'Dataset successfully cleaned and formatted!', 'success');
                         fetchLogs();
                     } else {
-                        showToast(data.message || data.error || 'Failed to sync dataset.', 'danger');
+                        showToast(data.message || 'Failed to clean dataset.', 'danger');
                     }
                 } catch (err) {
-                    showToast('Network error while syncing to Supabase.', 'danger');
+                    showToast('Network error while cleaning dataset.', 'danger');
                 } finally {
-                    cleanSyncBtn.disabled = false;
-                    cleanSyncBtn.innerHTML = originalHtml;
+                    cleanDatasetBtn.disabled = false;
+                    cleanDatasetBtn.innerHTML = originalHtml;
+                }
+            });
+        }
+
+        const copyAllBtn = document.getElementById('btnCopyAllMainDB') || document.getElementById('btnCleanSyncSupabase');
+        if (copyAllBtn) {
+            copyAllBtn.addEventListener('click', async () => {
+                copyAllBtn.disabled = true;
+                const originalHtml = copyAllBtn.innerHTML;
+                copyAllBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Copying ALL to Main DB...';
+                try {
+                    const res = await fetch('/api/dataset/sync-supabase', { method: 'POST' });
+                    const resText = await res.text();
+                    let data;
+                    try { data = JSON.parse(resText); } catch(e) { data = { success: false, message: resText.replace(/<[^>]+>/g, '').trim() }; }
+                    if (data.success) {
+                        showToast(data.message || 'All records successfully copied to Main Supabase Database!', 'success');
+                        fetchLogs();
+                    } else {
+                        showToast(data.message || data.error || 'Failed to copy data to Main Database.', 'danger');
+                    }
+                } catch (err) {
+                    showToast('Network error while copying to Main Database.', 'danger');
+                } finally {
+                    copyAllBtn.disabled = false;
+                    copyAllBtn.innerHTML = originalHtml;
                 }
             });
         }

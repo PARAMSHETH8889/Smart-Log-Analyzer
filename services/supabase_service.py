@@ -94,7 +94,7 @@ class SupabaseService:
         table_name = cls.get_log_table_name()
 
         try:
-            batch_size = 100
+            batch_size = 500
             inserted_count = 0
 
             for i in range(0, len(log_records), batch_size):
@@ -134,7 +134,7 @@ class SupabaseService:
             return 0, None
 
         try:
-            batch_size = 100
+            batch_size = 500
             inserted_count = 0
 
             for i in range(0, len(anomaly_records), batch_size):

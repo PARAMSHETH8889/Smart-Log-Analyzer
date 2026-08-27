@@ -95,19 +95,22 @@ class AnomalyDetector:
             l.timestamp.timestamp() if l.timestamp else 0.0 for l in sorted_logs
         ]
 
-        # Calculate rolling 5-minute frequency per log
+        # Calculate rolling 5-minute frequency per log using efficient O(N) two-pointer window
+        window_start_idx = 0
+        active_window_sources = defaultdict(int)
         for i, log in enumerate(sorted_logs):
             curr_ts = timestamps[i]
-            window_start = curr_ts - 300  # 300 seconds = 5 minutes
+            cutoff = curr_ts - 300  # 300 seconds = 5 minutes
             
-            # Count logs with same source in [curr_ts - 300, curr_ts]
-            count = 0
-            for j in range(i, -1, -1):
-                if timestamps[j] < window_start:
-                    break
-                if sorted_logs[j].source == log.source:
-                    count += 1
-            source_window_counts[log.id or i] = count
+            while window_start_idx < i and timestamps[window_start_idx] < cutoff:
+                prev_src = sorted_logs[window_start_idx].source
+                active_window_sources[prev_src] -= 1
+                if active_window_sources[prev_src] <= 0:
+                    active_window_sources.pop(prev_src, None)
+                window_start_idx += 1
+            
+            active_window_sources[log.source] += 1
+            source_window_counts[log.id or i] = active_window_sources[log.source]
 
         # 95th percentile threshold for high-frequency bursts
         freq_values = list(source_window_counts.values())

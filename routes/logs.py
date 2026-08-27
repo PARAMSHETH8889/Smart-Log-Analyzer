@@ -230,16 +230,21 @@ def upload_logs():
         else:
             anomalies_detected = 0
 
-        # Optionally auto-sync new records to Supabase in background
-        if SupabaseService.is_configured() and ingested_logs:
+        # Check if user requested immediate sync or if Supabase is configured
+        auto_sync = request.form.get("sync_to_supabase", "").lower() in ("true", "1", "yes")
+        supabase_synced = False
+        supabase_msg = ""
+        if auto_sync and SupabaseService.is_configured() and ingested_logs:
             try:
                 logs_payload = [l.to_supabase_log() for l in ingested_logs]
                 SupabaseService.insert_logs(logs_payload)
                 anom_payload = [l.to_supabase_anomaly() for l in ingested_logs if l.anomaly]
                 if anom_payload:
                     SupabaseService.insert_anomalies([a for a in anom_payload if a])
+                supabase_synced = True
+                supabase_msg = " and copied to Main Database (Supabase)"
             except Exception as sync_ex:
-                print(f"[Supabase Auto-Sync Notice] {sync_ex}")
+                supabase_msg = f" (Supabase sync note: {sync_ex})"
 
         return jsonify({
             "success": True,
@@ -248,8 +253,9 @@ def upload_logs():
             "rejected_count": validation_result.rejected_count,
             "duplicate_count": validation_result.duplicate_count,
             "anomalies_detected": anomalies_detected,
+            "supabase_synced": supabase_synced,
             "errors": validation_result.error_summary()[:20],
-            "message": f"Successfully imported {len(ingested_logs)} logs. Detected {anomalies_detected} anomalies.",
+            "message": f"Successfully imported {len(ingested_logs)} logs{supabase_msg}. Detected {anomalies_detected} anomalies.",
         })
 
     except Exception as ex:

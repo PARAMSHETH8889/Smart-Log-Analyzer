@@ -144,10 +144,18 @@
                             <span class="badge bg-secondary" id="selectedFileName">No file selected</span>
                         </div>
 
-                        <div class="alert alert-info py-2 small mb-0">
+                        <div class="alert alert-info py-2 small mb-2">
                             <strong>Supported schemas:</strong><br>
-                            • Standard: <code>timestamp, source, event_type, severity, message</code><br>
-                            • Web Access: <code>Timestamp, IP_Address, Request_Type, Status_Code, User_Agent, Location</code>
+                            • <strong>Supabase Cloud:</strong> <code>timestamp, ip_address, event_type, status_code, user_agent, session_id, location</code><br>
+                            • <strong>Standard Log:</strong> <code>timestamp, source, event_type, severity, message</code><br>
+                            • <strong>Web Access:</strong> <code>Timestamp, IP_Address, Request_Type, Status_Code, User_Agent, Location</code>
+                        </div>
+
+                        <div class="form-check form-switch small mb-2">
+                            <input class="form-check-input" type="checkbox" id="chkUploadSyncSupabase" name="sync_to_supabase" value="true">
+                            <label class="form-check-label text-muted" for="chkUploadSyncSupabase">
+                                <i class="bi bi-cloud-arrow-up text-primary me-1"></i>Copy all records to Main Database (Supabase) upon upload
+                            </label>
                         </div>
 
                         <!-- Upload Progress / Feedback -->
