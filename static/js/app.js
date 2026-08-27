@@ -205,6 +205,7 @@ window.LogApp = (function () {
             if (fileInput.files.length > 0) {
                 fileNameBadge.textContent = fileInput.files[0].name;
                 fileNameBadge.className = 'badge bg-primary';
+                if (uploadFeedback) uploadFeedback.classList.add('d-none');
             }
         });
 
@@ -228,6 +229,7 @@ window.LogApp = (function () {
                 fileInput.files = e.dataTransfer.files;
                 fileNameBadge.textContent = fileInput.files[0].name;
                 fileNameBadge.className = 'badge bg-primary';
+                if (uploadFeedback) uploadFeedback.classList.add('d-none');
             }
         });
 
