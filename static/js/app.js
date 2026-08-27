@@ -133,8 +133,64 @@ window.LogApp = (function () {
     }
 
     // =========================================================================
-    // 3. Upload & Dropzone Handler
+    // 2b. Global Delete Confirmation Modal Handler
     // =========================================================================
+    let activeDeleteCallback = null;
+
+    function showDeleteConfirmationModal({ targetDesc, onConfirm }) {
+        const modalEl = document.getElementById('deleteConfirmModal');
+        const descEl = document.getElementById('deleteModalTargetDesc');
+        const radioLocal = document.getElementById('deleteScopeLocal');
+
+        if (!modalEl) {
+            // Fallback if modal not present
+            if (confirm(targetDesc || 'Are you sure you want to delete this data?')) {
+                onConfirm(false);
+            }
+            return;
+        }
+
+        if (descEl && targetDesc) descEl.textContent = targetDesc;
+        if (radioLocal) radioLocal.checked = true; // Default to safe local deletion
+
+        activeDeleteCallback = onConfirm;
+        const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+        modal.show();
+    }
+
+    // Initialize modal confirm button listener once
+    document.addEventListener('DOMContentLoaded', () => {
+        const confirmDeleteBtn = document.getElementById('btnConfirmDeleteModal');
+        if (confirmDeleteBtn) {
+            confirmDeleteBtn.addEventListener('click', async () => {
+                const scope = document.querySelector('input[name="deleteScopeRadio"]:checked')?.value || 'local';
+                const purgeSupabase = (scope === 'supabase');
+
+                const spinner = document.getElementById('deleteModalSpinner');
+                const icon = document.getElementById('deleteModalIcon');
+                const modalEl = document.getElementById('deleteConfirmModal');
+                const modal = modalEl ? bootstrap.Modal.getInstance(modalEl) : null;
+
+                confirmDeleteBtn.disabled = true;
+                if (spinner) spinner.classList.remove('d-none');
+                if (icon) icon.classList.add('d-none');
+
+                try {
+                    if (activeDeleteCallback) {
+                        await activeDeleteCallback(purgeSupabase);
+                    }
+                    if (modal) modal.hide();
+                } catch (err) {
+                    showToast(`Deletion error: ${err.message}`, 'danger');
+                } finally {
+                    confirmDeleteBtn.disabled = false;
+                    if (spinner) spinner.classList.add('d-none');
+                    if (icon) icon.classList.remove('d-none');
+                    activeDeleteCallback = null;
+                }
+            });
+        }
+    });
     function initUpload() {
         const dropzone = document.getElementById('dropzone');
         const fileInput = document.getElementById('csvFileInput');
@@ -638,24 +694,24 @@ window.LogApp = (function () {
         }
 
         if (clearAllBtn) {
-            clearAllBtn.addEventListener('click', async () => {
-                if (!confirm('Are you sure you want to purge ALL logs from the database? This action cannot be undone.')) {
-                    return;
-                }
-                try {
-                    const res = await fetch('/api/logs/batch-delete', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ clear_all: true })
-                    });
-                    const data = await res.json();
-                    if (data.success) {
-                        showToast(data.message, 'success');
-                        fetchLogs();
+            clearAllBtn.addEventListener('click', () => {
+                showDeleteConfirmationModal({
+                    targetDesc: 'Are you sure you want to purge ALL logs across the system? Choose whether to delete from local cache only or permanently wipe from Supabase cloud database as well.',
+                    onConfirm: async (purgeSupabase) => {
+                        const res = await fetch('/api/logs/batch-delete', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ clear_all: true, purge_supabase: purgeSupabase })
+                        });
+                        const data = await res.json();
+                        if (data.success) {
+                            showToast(data.message, 'success');
+                            fetchLogs();
+                        } else {
+                            showToast(data.message || 'Failed to clear logs.', 'danger');
+                        }
                     }
-                } catch (err) {
-                    showToast('Failed to clear logs.', 'danger');
-                }
+                });
             });
         }
 
@@ -757,22 +813,23 @@ window.LogApp = (function () {
             tbody.innerHTML = rowsHtml;
             renderPagination(data.pages, data.page);
 
-            // Bind delete single log buttons
+            // Bind delete single log buttons with modal confirmation
             document.querySelectorAll('.btn-delete-log').forEach(btn => {
-                btn.addEventListener('click', async () => {
+                btn.addEventListener('click', () => {
                     const id = btn.getAttribute('data-log-id');
-                    if (confirm(`Delete log #${id}?`)) {
-                        try {
-                            const delRes = await fetch(`/api/logs/${id}`, { method: 'DELETE' });
+                    showDeleteConfirmationModal({
+                        targetDesc: `Are you sure you want to delete log record #${id}? Choose whether to remove from local database only or permanently purge from Supabase cloud database.`,
+                        onConfirm: async (purgeSupabase) => {
+                            const delRes = await fetch(`/api/logs/${id}?purge_supabase=${purgeSupabase}`, { method: 'DELETE' });
                             const delData = await delRes.json();
                             if (delData.success) {
                                 showToast(delData.message, 'success');
                                 fetchLogs();
+                            } else {
+                                showToast(delData.message || 'Failed to delete log.', 'danger');
                             }
-                        } catch (e) {
-                            showToast('Failed to delete log.', 'danger');
                         }
-                    }
+                    });
                 });
             });
 
@@ -846,20 +903,21 @@ window.LogApp = (function () {
         const deleteBtn = document.getElementById('btnDeleteCurrentLog');
 
         if (deleteBtn) {
-            deleteBtn.addEventListener('click', async () => {
+            deleteBtn.addEventListener('click', () => {
                 const logId = deleteBtn.getAttribute('data-log-id');
-                if (confirm(`Are you sure you want to delete log #${logId}?`)) {
-                    try {
-                        const res = await fetch(`/api/logs/${logId}`, { method: 'DELETE' });
+                showDeleteConfirmationModal({
+                    targetDesc: `Are you sure you want to delete log inspection #${logId}? Choose whether to delete from local cache only or permanently purge from Supabase cloud database.`,
+                    onConfirm: async (purgeSupabase) => {
+                        const res = await fetch(`/api/logs/${logId}?purge_supabase=${purgeSupabase}`, { method: 'DELETE' });
                         const data = await res.json();
                         if (data.success) {
                             showToast(data.message, 'success');
                             setTimeout(() => window.location.href = '/logs', 800);
+                        } else {
+                            showToast(data.message || 'Failed to delete log.', 'danger');
                         }
-                    } catch (e) {
-                        showToast('Failed to delete log.', 'danger');
                     }
-                }
+                });
             });
         }
 

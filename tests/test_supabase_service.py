@@ -64,3 +64,17 @@ def test_supabase_models_mapping():
     assert sup_ai["anomaly_id"] == sup_anom["id"]
     assert "Payment service experienced gateway timeout." in sup_ai["explanation"]
     assert "Stripe connection drop." in sup_ai["root_cause"]
+
+
+def test_supabase_delete_and_purge_fallback(monkeypatch):
+    """Test delete_log and purge_all_logs return safe errors when Supabase is unconfigured."""
+    monkeypatch.setenv("SUPABASE_URL", "")
+    monkeypatch.setenv("SUPABASE_KEY", "")
+
+    ok, err = SupabaseService.delete_log("test-uuid")
+    assert ok is False
+    assert err is not None
+
+    ok_purge, err_purge = SupabaseService.purge_all_logs()
+    assert ok_purge is False
+    assert err_purge is not None

@@ -279,3 +279,68 @@ class SupabaseService:
             "success": True,
             "message": f"Log {log.id} successfully synchronized with Supabase.",
         }
+
+    @classmethod
+    def delete_log(cls, log_uuid: str) -> Tuple[bool, Optional[str]]:
+        """
+        Permanently delete a log and its related anomaly & AI records from Supabase.
+        """
+        client = cls.get_client()
+        if not client:
+            return False, "Supabase is not configured."
+
+        if not log_uuid:
+            return False, "Invalid log UUID."
+
+        table_name = cls.get_log_table_name()
+
+        try:
+            # 1. Delete associated anomalies & ai_analysis
+            try:
+                # Find anomaly IDs linked to this log
+                anom_res = client.table("anomalies").select("id").eq("log_id", log_uuid).execute()
+                if anom_res.data:
+                    anom_ids = [a["id"] for a in anom_res.data if "id" in a]
+                    for anom_id in anom_ids:
+                        try:
+                            client.table("ai_analysis").delete().eq("anomaly_id", anom_id).execute()
+                        except Exception:
+                            pass
+                    client.table("anomalies").delete().eq("log_id", log_uuid).execute()
+            except Exception:
+                pass
+
+            # 2. Delete main log record
+            client.table(table_name).delete().eq("id", log_uuid).execute()
+            return True, None
+        except Exception as ex:
+            return False, f"Supabase deletion error: {str(ex)}"
+
+    @classmethod
+    def purge_all_logs(cls) -> Tuple[bool, Optional[str]]:
+        """
+        Permanently delete ALL logs, anomalies, and AI analyses from Supabase tables.
+        """
+        client = cls.get_client()
+        if not client:
+            return False, "Supabase is not configured."
+
+        table_name = cls.get_log_table_name()
+
+        try:
+            # Delete from child tables first
+            try:
+                client.table("ai_analysis").delete().neq("id", "00000000-0000-0000-0000-000000000000").execute()
+            except Exception:
+                pass
+
+            try:
+                client.table("anomalies").delete().neq("id", "00000000-0000-0000-0000-000000000000").execute()
+            except Exception:
+                pass
+
+            # Delete from main logs table
+            client.table(table_name).delete().neq("id", "00000000-0000-0000-0000-000000000000").execute()
+            return True, None
+        except Exception as ex:
+            return False, f"Supabase purge error: {str(ex)}"

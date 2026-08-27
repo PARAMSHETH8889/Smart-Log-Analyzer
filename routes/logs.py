@@ -268,32 +268,81 @@ def analyze_log_ai(log_id: int):
 
 @logs_bp.route("/api/logs/<int:log_id>", methods=["DELETE"])
 def delete_log(log_id: int):
-    """Delete a single log record."""
+    """
+    Delete a single log record.
+    Supports deleting from local database only OR permanently from main Supabase database.
+    """
     log = db.session.get(Log, log_id)
     if not log:
         return jsonify({"success": False, "message": "Log not found"}), 404
+
+    # Determine if user requested permanent deletion from Supabase
+    purge_supabase = False
+    req_json = request.get_json(silent=True) or {}
+    if req_json.get("purge_supabase") is True or req_json.get("delete_from_supabase") is True:
+        purge_supabase = True
+    elif request.args.get("purge_supabase", "").lower() in ("true", "1", "yes"):
+        purge_supabase = True
+
+    supabase_deleted = False
+    supabase_msg = ""
+    if purge_supabase:
+        if SupabaseService.is_configured():
+            ok, err = SupabaseService.delete_log(log.uuid)
+            if ok:
+                supabase_deleted = True
+                supabase_msg = " and permanently deleted from Supabase main cloud database"
+            else:
+                supabase_msg = f" (Supabase deletion notice: {err})"
+        else:
+            supabase_msg = " (Supabase not configured)"
+
     db.session.delete(log)
     db.session.commit()
+
     return jsonify({
         "success": True,
-        "message": f"Log #{log_id} deleted successfully.",
+        "supabase_deleted": supabase_deleted,
+        "message": f"Log #{log_id} successfully deleted from local database{supabase_msg}.",
     })
 
 
-@logs_bp.route("/api/logs/batch-delete", methods=["POST"])
+@logs_bp.route("/api/logs/batch-delete", methods=["POST", "DELETE"])
 def batch_delete_logs():
-    """Delete multiple or all logs."""
+    """
+    Delete multiple logs or purge entire database.
+    Supports deleting from local database only OR permanently from main Supabase database.
+    """
     data = request.get_json(silent=True) or {}
     log_ids = data.get("log_ids", [])
-    clear_all = data.get("clear_all", False)
+    clear_all = data.get("clear_all", False) or request.args.get("clear_all", "").lower() in ("true", "1")
+    purge_supabase = (
+        data.get("purge_supabase", False)
+        or data.get("delete_from_supabase", False)
+        or request.args.get("purge_supabase", "").lower() in ("true", "1")
+    )
 
+    supabase_msg = ""
     if clear_all:
+        total_count = Log.query.count()
+        if purge_supabase:
+            if SupabaseService.is_configured():
+                ok, err = SupabaseService.purge_all_logs()
+                if ok:
+                    supabase_msg = " and permanently purged from Supabase main cloud database"
+                else:
+                    supabase_msg = f" (Supabase notice: {err})"
+            else:
+                supabase_msg = " (Supabase not configured)"
+
         deleted = Log.query.delete()
         db.session.commit()
+
         return jsonify({
             "success": True,
             "deleted_count": deleted,
-            "message": f"All {deleted} logs have been purged from database.",
+            "supabase_purged": purge_supabase,
+            "message": f"All {deleted} logs permanently deleted from local database{supabase_msg}.",
         })
 
     if not log_ids:
@@ -302,6 +351,13 @@ def batch_delete_logs():
             "message": "No log IDs provided for deletion.",
         }), 400
 
+    # Retrieve UUIDs if deleting from Supabase
+    if purge_supabase and SupabaseService.is_configured():
+        targets = Log.query.filter(Log.id.in_(log_ids)).all()
+        for t in targets:
+            SupabaseService.delete_log(t.uuid)
+        supabase_msg = " and permanently deleted from Supabase cloud database"
+
     deleted = Log.query.filter(Log.id.in_(log_ids)).delete(
         synchronize_session=False
     )
@@ -309,7 +365,8 @@ def batch_delete_logs():
     return jsonify({
         "success": True,
         "deleted_count": deleted,
-        "message": f"Successfully deleted {deleted} selected log(s).",
+        "supabase_purged": purge_supabase,
+        "message": f"Successfully deleted {deleted} log(s) from local database{supabase_msg}.",
     })
 
 
