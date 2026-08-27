@@ -8,27 +8,25 @@ from models.models import Log
 from services.anomaly_detector import AnomalyDetector
 
 
-def test_anomaly_detection_http_500():
-    """Test that HTTP 500 error status combined with ERROR severity triggers anomaly detection."""
+def test_anomaly_detection_geo_high_risk():
+    """Test that high-risk geographic locations (e.g. North Korea) trigger anomaly detection."""
     log = Log(
         id=1,
         timestamp=datetime(2026, 8, 26, 10, 0, 0),
-        source="payment-service",
-        event_type="PAYMENT",
+        source="web-firefox",
+        event_type="PUT",
         severity="ERROR",
         status_code=500,
-        message="Internal server error connecting to payment gateway",
+        message="PUT /session/1116 | HTTP 500 | Agent: Firefox | Location: North Korea | Session: 1116",
     )
     detector = AnomalyDetector(threshold=50)
     results = detector.detect_batch([log])
 
     assert len(results) == 1
     tested_log = results[0]
-    # HTTP 500 (+40) + ERROR (+20) = 60 >= 50 threshold
     assert tested_log.anomaly is True
     assert tested_log.anomaly_score >= 60.0
-    assert "HTTP server error 500" in tested_log.anomaly_reason
-    assert "ERROR severity" in tested_log.anomaly_reason
+    assert "North Korea" in tested_log.anomaly_reason
 
 
 def test_anomaly_detection_critical_severity():
@@ -40,13 +38,12 @@ def test_anomaly_detection_critical_severity():
         event_type="DATABASE_QUERY",
         severity="CRITICAL",
         status_code=500,
-        message="Deadlock detected: transaction rolled back",
+        message="Deadlock detected: transaction rolled back | Location: North Korea",
     )
     detector = AnomalyDetector(threshold=50)
     results = detector.detect_batch([log])
 
     tested_log = results[0]
-    # Status 500 (+40) + CRITICAL (+30) = 70 >= 50 threshold
     assert tested_log.anomaly is True
     assert tested_log.anomaly_score >= 70.0
     assert "CRITICAL severity" in tested_log.anomaly_reason

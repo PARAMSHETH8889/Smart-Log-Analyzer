@@ -333,7 +333,7 @@ window.LogApp = (function () {
             } finally {
                 submitBtn.disabled = false;
                 spinner.classList.add('d-none');
-                btnText.textContent = 'Upload & Analyze';
+                btnText.textContent = 'Upload Dataset';
             }
         });
     }

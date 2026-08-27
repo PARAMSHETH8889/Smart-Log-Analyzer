@@ -101,7 +101,6 @@ def test_upload_csv_endpoint(client):
     assert res_data["success"] is True
     assert res_data["total_processed"] == 2
     assert res_data["imported_count"] == 2
-    assert res_data["anomalies_detected"] >= 1
 
 
 def test_upload_malformed_csv(client):

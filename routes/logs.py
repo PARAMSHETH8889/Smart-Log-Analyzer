@@ -218,18 +218,12 @@ def upload_logs():
                 "message": "Upload failed. All rows were rejected due to schema or parsing errors.",
             }), 422
 
-        # Ingest valid records and execute deterministic anomaly detection
+        # Ingest valid records directly into database without blocking on analysis
         ingested_logs = LogParser.ingest_records(
-            validation_result.valid_records, run_detection=True
+            validation_result.valid_records, run_detection=False
         )
 
-        ingested_ids = [l.id for l in ingested_logs if l.id]
-        if ingested_ids:
-            anomalies_detected = Log.query.filter(
-                Log.id.in_(ingested_ids), Log.anomaly == True
-            ).count()
-        else:
-            anomalies_detected = 0
+        anomalies_detected = 0
 
         # Check if user requested immediate sync or if Supabase is configured
         auto_sync = request.form.get("sync_to_supabase", "").lower() in ("true", "1", "yes")
@@ -238,10 +232,9 @@ def upload_logs():
         if auto_sync and SupabaseService.is_configured() and ingested_logs:
             try:
                 logs_payload = [l.to_supabase_log() for l in ingested_logs]
-                SupabaseService.insert_logs(logs_payload)
-                anom_payload = [l.to_supabase_anomaly() for l in ingested_logs if l.anomaly]
-                if anom_payload:
-                    SupabaseService.insert_anomalies([a for a in anom_payload if a])
+                # Sync in batches of 500
+                for i in range(0, len(logs_payload), 500):
+                    SupabaseService.insert_logs(logs_payload[i : i + 500])
                 supabase_synced = True
                 supabase_msg = " and copied to Main Database (Supabase)"
             except Exception as sync_ex:
@@ -256,7 +249,7 @@ def upload_logs():
             "anomalies_detected": anomalies_detected,
             "supabase_synced": supabase_synced,
             "errors": validation_result.error_summary()[:20],
-            "message": f"Successfully imported {len(ingested_logs)} logs{supabase_msg}. Detected {anomalies_detected} anomalies.",
+            "message": f"Successfully imported {len(ingested_logs)} logs as is{supabase_msg}.",
         })
 
     except Exception as ex:

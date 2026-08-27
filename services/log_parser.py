@@ -133,17 +133,17 @@ class LogParser:
     def ingest_records(
         cls,
         valid_records: List[Dict[str, Any]],
-        run_detection: bool = True,
+        run_detection: bool = False,
         detector_service: Any = None,
     ) -> List[Log]:
         """
-        Persist validated log records into SQLite database.
-        Executes fast, deterministic anomaly detector on the incoming batch.
+        Persist validated log records into SQLite database with fast bulk insertion.
+        Does NOT run heavy anomaly detection on upload unless explicitly requested.
         """
         if not valid_records:
             return []
 
-        # Convert dicts into Log model objects
+        # Convert dicts into Log model objects in chunks for lightning-fast SQLite commit
         log_objects: List[Log] = []
         for rec in valid_records:
             log_obj = Log(
@@ -158,15 +158,17 @@ class LogParser:
             )
             log_objects.append(log_obj)
 
-        db.session.add_all(log_objects)
-        db.session.commit()
+        chunk_size = 2000
+        for i in range(0, len(log_objects), chunk_size):
+            chunk = log_objects[i : i + chunk_size]
+            db.session.add_all(chunk)
+            db.session.commit()
 
         if run_detection and log_objects:
             if detector_service is None:
                 from services.anomaly_detector import AnomalyDetector
                 detector_service = AnomalyDetector
 
-            # Run lightning-fast detection directly on the newly ingested batch
             detector = detector_service()
             detector.detect_batch(log_objects)
             db.session.commit()

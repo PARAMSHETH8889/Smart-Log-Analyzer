@@ -29,14 +29,18 @@ SEVERITY_SCORES = {
 
 # Configurable Signal Weights
 DEFAULT_WEIGHTS = {
-    "status_500_plus": 40,
-    "severity_critical": 30,
-    "severity_error": 20,
-    "status_auth_fail": 15,
+    "geo_high_risk": 60,
+    "geo_spoofing_ip": 55,
+    "bot_malicious_action": 50,
+    "session_hijacking": 45,
+    "severity_critical": 35,
+    "high_frequency": 25,
     "status_repeated_404": 20,
-    "high_frequency": 20,
-    "rare_event": 15,
-    "isolation_forest": 30,
+    "isolation_forest": 15,
+    "status_auth_fail": 15,
+    "rare_event": 10,
+    "severity_error": 10,
+    "status_500_plus": 10,
 }
 
 
@@ -68,6 +72,8 @@ class AnomalyDetector:
         if not logs:
             return []
 
+        import re
+
         # Sort logs by timestamp for time-window frequency calculations
         sorted_logs = sorted(
             logs,
@@ -76,26 +82,43 @@ class AnomalyDetector:
 
         n_logs = len(sorted_logs)
 
-        # 1. Event Type & Source Frequency Statistics
-        event_counts = Counter(l.event_type for l in sorted_logs if l.event_type)
-        source_counts = Counter(l.source for l in sorted_logs if l.source)
-        rare_event_threshold = max(1, int(n_logs * 0.03))  # Less than 3% frequency
-
-        # 2. Sliding Window Frequency Analysis (5-minute window)
-        # Calculate event counts per source within a 5-minute rolling window
-        source_window_counts: Dict[int, int] = {}
+        # 1. Extract geographic locations, IP associations, and event statistics
+        extracted_locations: Dict[int, str] = {}
+        ip_locations = defaultdict(set)
         ip_404_counts: Dict[str, int] = defaultdict(int)
 
-        # Track 404s per IP
-        for l in sorted_logs:
+        for idx, l in enumerate(sorted_logs):
+            log_key = l.id or idx
+            loc_val = ""
+            if l.message:
+                match = re.search(r"Location:\s*([^|]+)", l.message, re.IGNORECASE)
+                if match:
+                    loc_val = match.group(1).strip()
+            if not loc_val and l.source and l.source.startswith("web-"):
+                loc_cand = l.source.replace("web-", "").strip()
+                if loc_cand.lower() in ("north korea", "germany", "brazil", "india", "usa", "france", "canada", "china"):
+                    loc_val = loc_cand
+            extracted_locations[log_key] = loc_val
+
+            if l.ip_address and loc_val:
+                ip_locations[l.ip_address].add(loc_val)
+
             if l.status_code == 404 and l.ip_address:
                 ip_404_counts[l.ip_address] += 1
 
+        loc_counts = Counter(loc for loc in extracted_locations.values() if loc)
+        rare_loc_threshold = max(1, int(n_logs * 0.005))  # Less than 0.5% frequency
+
+        event_counts = Counter(l.event_type for l in sorted_logs if l.event_type)
+        source_counts = Counter(l.source for l in sorted_logs if l.source)
+        rare_event_threshold = max(1, int(n_logs * 0.01))
+
+        # 2. Sliding Window Frequency Analysis (5-minute window)
+        source_window_counts: Dict[int, int] = {}
         timestamps = [
             l.timestamp.timestamp() if l.timestamp else 0.0 for l in sorted_logs
         ]
 
-        # Calculate rolling 5-minute frequency per log using efficient O(N) two-pointer window
         window_start_idx = 0
         active_window_sources = defaultdict(int)
         for i, log in enumerate(sorted_logs):
@@ -112,11 +135,9 @@ class AnomalyDetector:
             active_window_sources[log.source] += 1
             source_window_counts[log.id or i] = active_window_sources[log.source]
 
-        # 95th percentile threshold for high-frequency bursts
         freq_values = list(source_window_counts.values())
         if freq_values and len(freq_values) >= 10:
             high_freq_threshold = float(np.percentile(freq_values, 95))
-            # Minimum threshold of 5 events in 5 minutes to avoid false positives in tiny datasets
             high_freq_threshold = max(5.0, high_freq_threshold)
         else:
             high_freq_threshold = 5.0
@@ -132,19 +153,77 @@ class AnomalyDetector:
             signals_triggered: List[Tuple[str, int, str]] = []
             score = 0
 
-            # Signal 1: HTTP 500+ Error
-            if log.status_code and log.status_code >= 500:
-                pts = self.weights.get("status_500_plus", 40)
+            log_loc = extracted_locations.get(log_key, "")
+
+            # Signal 1: High-Risk / Rare Geographic Origin
+            if log_loc:
+                is_high_risk = log_loc.lower() in ("north korea", "kp", "syria", "iran", "cuba")
+                is_rare_geo = loc_counts.get(log_loc, 0) <= rare_loc_threshold
+                if is_high_risk or is_rare_geo:
+                    pts = self.weights.get("geo_high_risk", 60)
+                    score += pts
+                    signals_triggered.append(
+                        (
+                            "HIGH_RISK_GEO",
+                            pts,
+                            f"originates from high-risk/anomalous geographic location '{log_loc}'",
+                        )
+                    )
+
+            # Signal 2: IP Multi-Country Geo-Spoofing
+            countries_for_ip = ip_locations.get(log.ip_address, set())
+            if len(countries_for_ip) >= 3:
+                pts = self.weights.get("geo_spoofing_ip", 55)
                 score += pts
                 signals_triggered.append(
                     (
-                        "HTTP_5XX_ERROR",
+                        "GEO_SPOOFING_IP",
                         pts,
-                        f"returned HTTP server error {log.status_code}",
+                        f"IP address {log.ip_address} exhibited rotating geographic hops across {len(countries_for_ip)} distinct countries",
                     )
                 )
 
-            # Signal 2: Suspicious HTTP Status
+            # Signal 3: Malicious Automated Bot Operations
+            is_bot = (log.source and "bot" in log.source.lower()) or (log.message and "agent: bot" in log.message.lower())
+            if is_bot and log.event_type in ("DELETE", "PUT") and (log_loc.lower() == "north korea" or (log.status_code and log.status_code >= 400)):
+                pts = self.weights.get("bot_malicious_action", 50)
+                score += pts
+                signals_triggered.append(
+                    (
+                        "MALICIOUS_BOT_ACTION",
+                        pts,
+                        f"automated Bot client attempted destructive HTTP {log.event_type} operation",
+                    )
+                )
+
+            # Signal 4: Severity Level
+            if log.severity == "CRITICAL":
+                pts = self.weights.get("severity_critical", 35)
+                score += pts
+                signals_triggered.append(
+                    ("CRITICAL_SEVERITY", pts, "has CRITICAL severity level")
+                )
+            elif log.severity == "ERROR":
+                pts = self.weights.get("severity_error", 10)
+                score += pts
+                signals_triggered.append(
+                    ("ERROR_SEVERITY", pts, "has ERROR severity level")
+                )
+
+            # Signal 5: Frequency Anomaly
+            curr_freq = source_window_counts.get(log_key, 1)
+            if curr_freq >= high_freq_threshold:
+                pts = self.weights.get("high_frequency", 25)
+                score += pts
+                signals_triggered.append(
+                    (
+                        "FREQUENCY_BURST",
+                        pts,
+                        f"occurred during an unusually high burst of {curr_freq} events in 5 minutes from '{log.source}'",
+                    )
+                )
+
+            # Signal 6: Suspicious HTTP Status / Repeated 404
             if log.status_code in (401, 403):
                 pts = self.weights.get("status_auth_fail", 15)
                 score += pts
@@ -156,7 +235,6 @@ class AnomalyDetector:
                     )
                 )
             elif log.status_code == 404:
-                # Repeated 404 check
                 ip_count = ip_404_counts.get(log.ip_address or "", 0)
                 if ip_count >= 3:
                     pts = self.weights.get("status_repeated_404", 20)
@@ -169,48 +247,33 @@ class AnomalyDetector:
                         )
                     )
 
-            # Signal 3: Severity Level
-            if log.severity == "CRITICAL":
-                pts = self.weights.get("severity_critical", 30)
-                score += pts
-                signals_triggered.append(
-                    ("CRITICAL_SEVERITY", pts, "has CRITICAL severity level")
-                )
-            elif log.severity == "ERROR":
-                pts = self.weights.get("severity_error", 20)
-                score += pts
-                signals_triggered.append(
-                    ("ERROR_SEVERITY", pts, "has ERROR severity level")
-                )
-
-            # Signal 4: Frequency Anomaly
-            curr_freq = source_window_counts.get(log_key, 1)
-            if curr_freq >= high_freq_threshold:
-                pts = self.weights.get("high_frequency", 20)
+            # Signal 7: HTTP 500+ Error
+            if log.status_code and log.status_code >= 500:
+                pts = self.weights.get("status_500_plus", 10)
                 score += pts
                 signals_triggered.append(
                     (
-                        "FREQUENCY_BURST",
+                        "HTTP_5XX_ERROR",
                         pts,
-                        f"occurred during an unusually high burst of {curr_freq} events in 5 minutes from '{log.source}'",
+                        f"returned HTTP server error {log.status_code}",
                     )
                 )
 
-            # Signal 5: Rare Event
+            # Signal 8: Rare Event Type
             if event_counts.get(log.event_type, 0) <= rare_event_threshold:
-                pts = self.weights.get("rare_event", 15)
+                pts = self.weights.get("rare_event", 10)
                 score += pts
                 signals_triggered.append(
                     (
                         "RARE_EVENT",
                         pts,
-                        f"is an unusual event type '{log.event_type}' (occurring in <=3% of logs)",
+                        f"is an unusual event type '{log.event_type}' (occurring in <=1% of logs)",
                     )
                 )
 
-            # Signal 6: Isolation Forest Anomaly
+            # Signal 9: Isolation Forest Anomaly
             if isolation_forest_flags.get(log_key, False):
-                pts = self.weights.get("isolation_forest", 30)
+                pts = self.weights.get("isolation_forest", 15)
                 score += pts
                 signals_triggered.append(
                     (
@@ -301,11 +364,13 @@ class AnomalyDetector:
 
             X = np.array(feature_rows, dtype=np.float32)
 
-            # Fit Isolation Forest
+            # Fit Isolation Forest with fast parameters
             iso_forest = IsolationForest(
                 contamination=self.contamination,
                 random_state=42,
-                n_estimators=100,
+                n_estimators=50,
+                max_samples=min(512, len(logs)),
+                n_jobs=-1,
             )
             predictions = iso_forest.fit_predict(X)
 
