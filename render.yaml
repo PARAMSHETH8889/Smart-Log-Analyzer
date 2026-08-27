@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: smart-log-analyzer
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app
+    envVars:
+      - key: FLASK_ENV
+        value: production
+      - key: GEMINI_MODEL
+        value: gemini-3.5-flash-lite
+      - key: SECRET_KEY
+        generateValue: true
