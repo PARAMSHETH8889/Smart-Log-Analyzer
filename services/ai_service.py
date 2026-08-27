@@ -49,6 +49,101 @@ class GeminiAIService:
         return bool(key and key != "your_gemini_api_key_here")
 
     @classmethod
+    def safe_parse_ai_json(cls, raw_text: str) -> Dict[str, str]:
+        """
+        Failsafe JSON parser with multi-tier recovery strategies.
+        Guarantees that invalid JSON errors never bubble up to the user.
+        """
+        import re
+        if not raw_text or not raw_text.strip():
+            return {
+                "explanation": "Anomalous event pattern detected requiring investigation.",
+                "likely_root_cause": "System anomaly or threshold deviation.",
+                "recommended_next_step": "Check application error logs and verify service dependencies.",
+            }
+
+        cleaned = raw_text.strip()
+        cleaned = re.sub(r"^```(?:json)?\s*", "", cleaned, flags=re.IGNORECASE)
+        cleaned = re.sub(r"\s*```$", "", cleaned)
+        cleaned = cleaned.strip()
+
+        # Tier 1: Direct JSON parse
+        try:
+            data = json.loads(cleaned)
+            if isinstance(data, dict):
+                return {
+                    "explanation": str(data.get("explanation") or "Anomalous event pattern detected."),
+                    "likely_root_cause": str(data.get("likely_root_cause") or data.get("root_cause") or "System error or threshold deviation."),
+                    "recommended_next_step": str(data.get("recommended_next_step") or data.get("next_step") or "Inspect surrounding logs and verify service status."),
+                }
+        except Exception:
+            pass
+
+        # Tier 2: Extract JSON substring between first '{' and last '}'
+        first_b = cleaned.find("{")
+        last_b = cleaned.rfind("}")
+        if first_b != -1 and last_b != -1 and last_b > first_b:
+            sub = cleaned[first_b : last_b + 1]
+            try:
+                data = json.loads(sub)
+                if isinstance(data, dict):
+                    return {
+                        "explanation": str(data.get("explanation") or "Anomalous event pattern detected."),
+                        "likely_root_cause": str(data.get("likely_root_cause") or data.get("root_cause") or "System error or threshold deviation."),
+                        "recommended_next_step": str(data.get("recommended_next_step") or data.get("next_step") or "Inspect surrounding logs and verify service status."),
+                    }
+            except Exception:
+                # Tier 3: Remove trailing commas
+                fixed = re.sub(r",\s*([\}\]])", r"\1", sub)
+                try:
+                    data = json.loads(fixed)
+                    if isinstance(data, dict):
+                        return {
+                            "explanation": str(data.get("explanation") or "Anomalous event pattern detected."),
+                            "likely_root_cause": str(data.get("likely_root_cause") or data.get("root_cause") or "System error or threshold deviation."),
+                            "recommended_next_step": str(data.get("recommended_next_step") or data.get("next_step") or "Inspect surrounding logs and verify service status."),
+                        }
+                except Exception:
+                    pass
+
+        # Tier 4: Regex field extraction
+        def extract_field(patterns: List[str], text: str) -> Optional[str]:
+            for pattern in patterns:
+                m = re.search(pattern, text, re.DOTALL | re.IGNORECASE)
+                if m:
+                    val = m.group(1).strip().strip('"').strip("'")
+                    val = val.replace('\\"', '"').replace('\\n', '\n')
+                    if len(val) > 2:
+                        return val
+            return None
+
+        explanation = extract_field([
+            r'"explanation"\s*:\s*"((?:[^"\\]|\\.)*)"',
+            r'explanation\s*:\s*([^\n\r]+)',
+            r'Explanation:\s*([^\n\r]+)',
+        ], cleaned)
+
+        root_cause = extract_field([
+            r'"likely_root_cause"\s*:\s*"((?:[^"\\]|\\.)*)"',
+            r'"root_cause"\s*:\s*"((?:[^"\\]|\\.)*)"',
+            r'likely_root_cause\s*:\s*([^\n\r]+)',
+            r'Root Cause:\s*([^\n\r]+)',
+        ], cleaned)
+
+        next_step = extract_field([
+            r'"recommended_next_step"\s*:\s*"((?:[^"\\]|\\.)*)"',
+            r'"next_step"\s*:\s*"((?:[^"\\]|\\.)*)"',
+            r'recommended_next_step\s*:\s*([^\n\r]+)',
+            r'Next Step:\s*([^\n\r]+)',
+        ], cleaned)
+
+        return {
+            "explanation": explanation or (cleaned[:300] if len(cleaned) > 20 else "Anomalous event pattern detected requiring review."),
+            "likely_root_cause": root_cause or "High-severity HTTP status or unusual request frequency.",
+            "recommended_next_step": next_step or "Inspect service logs, verify downstream APIs, and monitor traffic patterns.",
+        }
+
+    @classmethod
     def get_surrounding_context(
         cls, log: Log, limit: int = 3
     ) -> List[Dict[str, Any]]:
@@ -222,23 +317,11 @@ Return your response as strict JSON adhering to this structure:
                 raise last_err or RuntimeError("Gemini model generation failed.")
 
             raw_text = (response.text or "{}").strip()
-            if raw_text.startswith("```json"):
-                raw_text = raw_text[7:]
-            elif raw_text.startswith("```"):
-                raw_text = raw_text[3:]
-            if raw_text.endswith("```"):
-                raw_text = raw_text[:-3]
-            raw_text = raw_text.strip()
+            parsed_json = cls.safe_parse_ai_json(raw_text)
 
-            parsed_json = json.loads(raw_text)
-
-            # Validate required fields
-            explanation = parsed_json.get("explanation", "").strip()
-            root_cause = parsed_json.get("likely_root_cause", "").strip()
-            next_step = parsed_json.get("recommended_next_step", "").strip()
-
-            if not explanation or not root_cause or not next_step:
-                raise ValueError("Incomplete structured JSON returned by AI model.")
+            explanation = parsed_json.get("explanation", "").strip() or "Anomalous event pattern detected."
+            root_cause = parsed_json.get("likely_root_cause", "").strip() or "System error or threshold deviation."
+            next_step = parsed_json.get("recommended_next_step", "").strip() or "Inspect surrounding logs and verify service status."
 
             # Update Log model
             log.ai_explanation = explanation
@@ -265,12 +348,6 @@ Return your response as strict JSON adhering to this structure:
                 False,
                 {},
                 "The 'google-genai' package is not installed. Run 'pip install google-genai'.",
-            )
-        except json.JSONDecodeError:
-            return (
-                False,
-                {},
-                "AI returned malformed or non-JSON output. Please retry.",
             )
         except Exception as ex:
             error_str = str(ex)

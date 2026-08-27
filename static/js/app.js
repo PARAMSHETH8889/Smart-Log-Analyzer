@@ -738,6 +738,30 @@ window.LogApp = (function () {
             });
         }
 
+        const cleanSyncBtn = document.getElementById('btnCleanSyncSupabase');
+        if (cleanSyncBtn) {
+            cleanSyncBtn.addEventListener('click', async () => {
+                cleanSyncBtn.disabled = true;
+                const originalHtml = cleanSyncBtn.innerHTML;
+                cleanSyncBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Cleaning & Syncing...';
+                try {
+                    const res = await fetch('/api/dataset/sync-supabase', { method: 'POST' });
+                    const data = await res.json();
+                    if (data.success) {
+                        showToast(data.message || 'Dataset cleaned and synced to Supabase!', 'success');
+                        fetchLogs();
+                    } else {
+                        showToast(data.message || data.error || 'Failed to sync dataset.', 'danger');
+                    }
+                } catch (err) {
+                    showToast('Network error while syncing to Supabase.', 'danger');
+                } finally {
+                    cleanSyncBtn.disabled = false;
+                    cleanSyncBtn.innerHTML = originalHtml;
+                }
+            });
+        }
+
         fetchLogs();
     }
 

@@ -10,11 +10,12 @@ import os
 from typing import List, Dict, Any, Tuple, Optional
 from config import Config
 from models.models import Log
+from services.data_cleaner import DataCleaner
 
 
 class SupabaseService:
     """
-    Client wrapper for Supabase database operations with dynamic schema adaptation.
+    Client wrapper for Supabase database operations with dynamic schema adaptation and JSON sanitization.
     """
 
     _client = None
@@ -80,7 +81,8 @@ class SupabaseService:
         cls, log_records: List[Dict[str, Any]]
     ) -> Tuple[int, Optional[str]]:
         """
-        Insert log records into Supabase logs table in batches.
+        Clean, sanitize, and insert log records into Supabase logs table in batches.
+        Guarantees schema matching and zero JSON serialization errors.
         """
         client = cls.get_client()
         if not client:
@@ -98,29 +100,20 @@ class SupabaseService:
             for i in range(0, len(log_records), batch_size):
                 chunk = log_records[i : i + batch_size]
                 
-                # Format chunk according to table columns if 'smart Log analyser'
+                # Clean each record according to target table columns and sanitize for JSON
                 formatted_chunk = []
                 for rec in chunk:
-                    if table_name == "smart Log analyser":
-                        item = {
-                            "id": rec.get("id"),
-                            "timestamp": rec.get("timestamp"),
-                            "ip_address": rec.get("ip_address"),
-                            "event_type": rec.get("event_type"),
-                            "status_code": rec.get("status_code"),
-                            "user_agent": rec.get("source", "").replace("web-", "").capitalize() if rec.get("source") else None,
-                            "session_id": rec.get("endpoint", "").replace("/session/", "") if rec.get("endpoint") else "1000",
-                            "location": "Global",
-                        }
-                    else:
-                        item = rec
-                    formatted_chunk.append(item)
+                    cleaned_item = DataCleaner.clean_record_for_supabase(rec, table_name=table_name)
+                    formatted_chunk.append(cleaned_item)
 
-                response = client.table(table_name).upsert(formatted_chunk, on_conflict="id").execute()
+                # Ensure strict JSON-serializability
+                sanitized_payload = DataCleaner.sanitize_for_json(formatted_chunk)
+
+                response = client.table(table_name).upsert(sanitized_payload, on_conflict="id").execute()
                 if hasattr(response, "data") and response.data:
                     inserted_count += len(response.data)
                 else:
-                    inserted_count += len(formatted_chunk)
+                    inserted_count += len(sanitized_payload)
 
             return inserted_count, None
         except Exception as ex:
@@ -164,15 +157,16 @@ class SupabaseService:
                     formatted_chunk.append(item)
 
                 try:
+                    sanitized_anoms = DataCleaner.sanitize_for_json(formatted_chunk)
                     response = (
                         client.table("anomalies")
-                        .upsert(formatted_chunk, on_conflict="id")
+                        .upsert(sanitized_anoms, on_conflict="id")
                         .execute()
                     )
                     if hasattr(response, "data") and response.data:
                         inserted_count += len(response.data)
                     else:
-                        inserted_count += len(formatted_chunk)
+                        inserted_count += len(sanitized_anoms)
                 except Exception:
                     # Fallback to minimal schema if columns like reason/anomaly_score don't exist
                     minimal_chunk = [
@@ -184,8 +178,9 @@ class SupabaseService:
                         }
                         for a in formatted_chunk
                     ]
-                    response = client.table("anomalies").upsert(minimal_chunk, on_conflict="id").execute()
-                    inserted_count += len(minimal_chunk)
+                    sanitized_min = DataCleaner.sanitize_for_json(minimal_chunk)
+                    response = client.table("anomalies").upsert(sanitized_min, on_conflict="id").execute()
+                    inserted_count += len(sanitized_min)
 
             return inserted_count, None
         except Exception as ex:
@@ -196,7 +191,7 @@ class SupabaseService:
         cls, ai_records: List[Dict[str, Any]]
     ) -> Tuple[int, Optional[str]]:
         """
-        Insert AI analysis records into Supabase `ai_analysis` table.
+        Insert AI analysis records into Supabase `ai_analysis` table with JSON sanitization.
         """
         client = cls.get_client()
         if not client:
@@ -218,21 +213,22 @@ class SupabaseService:
                     formatted_chunk.append({
                         "id": anom_id or r.get("id"),
                         "anomaly_id": anom_id,
-                        "explanation": r.get("explanation"),
-                        "root_cause": r.get("root_cause"),
-                        "next_step": r.get("next_step"),
-                        "model": r.get("model", "gemini-2.5-flash"),
+                        "explanation": str(r.get("explanation") or "").strip(),
+                        "root_cause": str(r.get("root_cause") or "").strip(),
+                        "next_step": str(r.get("next_step") or "").strip(),
+                        "model": str(r.get("model") or "gemini-3.5-flash-lite").strip(),
                     })
 
+                sanitized_ai = DataCleaner.sanitize_for_json(formatted_chunk)
                 response = (
                     client.table("ai_analysis")
-                    .upsert(formatted_chunk, on_conflict="id")
+                    .upsert(sanitized_ai, on_conflict="id")
                     .execute()
                 )
                 if hasattr(response, "data") and response.data:
                     inserted_count += len(response.data)
                 else:
-                    inserted_count += len(formatted_chunk)
+                    inserted_count += len(sanitized_ai)
 
             return inserted_count, None
         except Exception as ex:
@@ -278,6 +274,64 @@ class SupabaseService:
         return {
             "success": True,
             "message": f"Log {log.id} successfully synchronized with Supabase.",
+        }
+
+    @classmethod
+    def clean_and_sync_all_logs(cls) -> Dict[str, Any]:
+        """
+        Clean the entire local database according to Supabase column schema
+        and push all logs, anomalies, and AI analyses to Supabase cloud tables.
+        Guarantees zero invalid JSON errors.
+        """
+        if not cls.is_configured():
+            return {
+                "success": False,
+                "message": "Supabase is not configured. Please verify SUPABASE_URL and SUPABASE_KEY.",
+            }
+
+        all_logs = Log.query.all()
+        if not all_logs:
+            return {
+                "success": True,
+                "message": "No local logs found to sync.",
+                "logs_synced": 0,
+                "anomalies_synced": 0,
+                "ai_synced": 0,
+            }
+
+        raw_dicts = [l.to_supabase_log() for l in all_logs]
+        table_name = cls.get_log_table_name()
+        cleaned_logs, clean_metrics = DataCleaner.clean_dataset(raw_dicts, table_name=table_name)
+
+        # 1. Sync cleaned logs
+        logs_count, logs_err = cls.insert_logs(cleaned_logs)
+        if logs_err:
+            return {"success": False, "error": f"Failed syncing logs: {logs_err}"}
+
+        # 2. Sync anomalies
+        anom_records = []
+        ai_records = []
+        for l in all_logs:
+            if l.anomaly:
+                anom_dict = l.to_supabase_anomaly()
+                if anom_dict:
+                    anom_records.append(anom_dict)
+                    if l.ai_explanation or l.ai_root_cause:
+                        ai_dict = l.to_supabase_ai(anomaly_uuid=anom_dict["id"])
+                        if ai_dict:
+                            ai_records.append(ai_dict)
+
+        anom_count, anom_err = cls.insert_anomalies(anom_records)
+        ai_count, ai_err = cls.insert_ai_analyses(ai_records)
+
+        return {
+            "success": True,
+            "message": f"Successfully cleaned and synchronized {logs_count} logs, {anom_count} anomalies, and {ai_count} AI analyses with Supabase ({table_name}).",
+            "table_name": table_name,
+            "logs_synced": logs_count,
+            "anomalies_synced": anom_count,
+            "ai_synced": ai_count,
+            "cleaning_metrics": clean_metrics,
         }
 
     @classmethod

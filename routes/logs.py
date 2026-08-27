@@ -26,6 +26,7 @@ from services.log_parser import LogParser
 from services.anomaly_detector import AnomalyDetector
 from services.ai_service import GeminiAIService
 from services.supabase_service import SupabaseService
+from services.data_cleaner import DataCleaner
 from config import Config
 
 # Whitelisted columns for dynamic sorting (prevents SQL/ORM injection)
@@ -451,32 +452,56 @@ def export_anomalies_csv():
     )
 
 
+@logs_bp.route("/api/dataset/clean", methods=["POST"])
+def clean_dataset_api():
+    """
+    Clean and process the existing dataset to ensure 100% schema conformity with Supabase columns.
+    Fixes invalid timestamps, removes NaN/Inf values, sanitizes strings, and validates data types.
+    """
+    all_logs = Log.query.all()
+    if not all_logs:
+        return jsonify({
+            "success": True,
+            "message": "No records in local dataset to clean.",
+            "cleaned_count": 0,
+        })
+
+    raw_dicts = [l.to_dict() for l in all_logs]
+    table_name = SupabaseService.get_log_table_name() if SupabaseService.is_configured() else "smart Log analyser"
+    cleaned_records, metrics = DataCleaner.clean_dataset(raw_dicts, table_name=table_name)
+
+    # Update local records if needed (normalize fields)
+    for log, cleaned in zip(all_logs, cleaned_records):
+        if cleaned.get("status_code") is not None:
+            log.status_code = cleaned["status_code"]
+        if cleaned.get("event_type"):
+            log.event_type = cleaned["event_type"]
+        if cleaned.get("ip_address"):
+            log.ip_address = cleaned["ip_address"]
+
+    db.session.commit()
+
+    return jsonify({
+        "success": True,
+        "message": f"Successfully cleaned {len(cleaned_records)} records according to Supabase '{table_name}' column schema.",
+        "table_name": table_name,
+        "metrics": metrics,
+    })
+
+
 @logs_bp.route("/api/sync/supabase", methods=["POST"])
+@logs_bp.route("/api/dataset/sync-supabase", methods=["POST"])
 def sync_supabase_endpoint():
-    """Sync existing logs and anomalies to Supabase."""
+    """
+    Clean dataset and synchronize all logs, anomalies, and AI analyses with Supabase cloud database.
+    Guarantees zero invalid JSON errors.
+    """
     if not SupabaseService.is_configured():
         return jsonify({
             "success": False,
             "message": "Supabase credentials are not configured. Please set SUPABASE_URL and SUPABASE_KEY in .env.",
         }), 400
 
-    logs = Log.query.all()
-    if not logs:
-        return jsonify({
-            "success": False,
-            "message": "No logs in local database to sync.",
-        })
-
-    logs_payload = [l.to_supabase_log() for l in logs]
-    logs_ins, err1 = SupabaseService.insert_logs(logs_payload)
-
-    anomalies_payload = [l.to_supabase_anomaly() for l in logs if l.anomaly]
-    anomalies_payload = [a for a in anomalies_payload if a is not None]
-    anom_ins, err2 = SupabaseService.insert_anomalies(anomalies_payload)
-
-    return jsonify({
-        "success": True,
-        "logs_synced": logs_ins,
-        "anomalies_synced": anom_ins,
-        "message": f"Successfully synced {logs_ins} logs and {anom_ins} anomalies to Supabase.",
-    })
+    sync_result = SupabaseService.clean_and_sync_all_logs()
+    status_code = 200 if sync_result.get("success") else 500
+    return jsonify(sync_result), status_code
